@@ -1,0 +1,26 @@
+{
+  "name": "sync-no-ci",
+  "displayName": "仅同步(不构建)",
+  "publisher": "local",
+  "version": "0.0.1",
+  "engines": { "vscode": "^1.60.0" },
+  "activationEvents": ["onCommand:sync-no-ci.sync"],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "sync-no-ci.sync",
+        "title": "仅同步(不构建)"
+      }
+    ],
+    "menus": {
+      "scm/title": [
+        {
+          "command": "sync-no-ci.sync",
+          "when": "scmProvider == git",
+          "group": "navigation"
+        }
+      ]
+    }
+  }
+}
