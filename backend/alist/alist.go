@@ -287,7 +287,7 @@ func NewFs(ctx context.Context, name, root string, m configmap.Mapper) (fs.Fs, e
 			if urlPath != "" && urlPath != "/" {
 				// 移除urlPath的前导斜杠，避免双斜杠
 				urlPath = strings.TrimPrefix(urlPath, "/")
-				rootPath = rootPath + urlPath
+				rootPath += urlPath
 			}
 		}
 	} else {
@@ -892,10 +892,6 @@ func (f *Fs) Move(ctx context.Context, src fs.Object, remote string) (fs.Object,
 	// 目标文件处理按后端/上层策略执行（不在此处预先备份）
 
 	// 计算目录/文件名
-	srcDirForReq := path.Dir(srcPath)
-	if srcDirForReq == "." {
-		srcDirForReq = "/"
-	}
 	srcName = path.Base(srcPath)
 
 	dstDir := path.Dir(dstPath)

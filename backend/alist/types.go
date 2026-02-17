@@ -17,9 +17,8 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("%s (Error %d)", e.Info.Message, e.Info.Code)
 }
 
-// ============================================================================
 // Alist 原生 API 数据结构
-// ============================================================================
+
 // ListRequest 描述了Alist列表请求
 type ListRequest struct {
 	Path string `json:"path"` // 要列表的路径
@@ -75,9 +74,8 @@ type MkdirResponse struct {
 	Data    Item   `json:"data"`    // 创建的目录信息
 }
 
-// ============================================================================
 // OpenDrive 相关数据结构（已弃用，仅保留用于兼容性）
-// ============================================================================
+
 // Account describes an Alist account
 type Account struct {
 	Username string `json:"username"`
