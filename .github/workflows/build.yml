@@ -18,10 +18,14 @@ on:
         description: Manual run (bypass default conditions)
         type: boolean
         default: true
+      repo:
+        description: 构建时的项目仓库
+        type: string
+        default: 'CloneWolf-Jiang/rclone'
 
 jobs:
   build:
-    if: inputs.manual || (github.repository == 'rclone/rclone' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name))
+    if: inputs.manual || (github.repository == (inputs.repo || 'CloneWolf-Jiang/rclone') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name))
     timeout-minutes: 60
     defaults:
       run:

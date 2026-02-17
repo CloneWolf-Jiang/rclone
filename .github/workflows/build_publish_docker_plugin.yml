@@ -13,10 +13,14 @@ on:
         description: Manual run (bypass default conditions)
         type: boolean
         default: true
+      repo:
+        description: 构建时的项目仓库
+        type: string
+        default: 'CloneWolf-Jiang/rclone'
 
 jobs:
   build_docker_volume_plugin:
-    if: inputs.manual || github.repository == 'rclone/rclone'
+    if: inputs.manual || github.repository == (inputs.repo || 'CloneWolf-Jiang/rclone')
     name: Build docker plugin job
     runs-on: ubuntu-latest
     steps:
