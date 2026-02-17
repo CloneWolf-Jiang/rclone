@@ -1,20 +1,117 @@
 # Alist 后端：核心接口缺口与改进建议
 
 概述
-- 本文档面向开发者，汇总当前 `backend/alist` 已实现的功能、未满足 rclone core 期望的接口，以及优先级建议和可行改进方案。
+- 本文档面向开发者，汇总当前 `backend/alist` 已实现的功能、与 rclone core 的交互设计决策、已知限制与优化建议。分析以**原生 Alist API**为基础，明确后端架构与 rclone 框架的适配关系。
 
 一、已使用的 Alist 原生 API（摘要）
-- /api/fs/list：目录列表与读取元数据（当前用于 `List`、`readMetaData`）。
-- /api/fs/get：获取 `raw_url`（用于下载，`Open`）。
-- /api/fs/put：上传文件（`PUT /api/fs/put`，`Object.Update`）。
+- /api/fs/list：目录列表与读取元数据（当前用于 `List`、`readMetaData`、`FindLeaf`、dircache 填充）。
+- /api/fs/get：获取单文件元数据与 `raw_url`（用于下载、`Open`、`readMetaData`、上传后查询）。
+- /api/fs/put：上传文件（`Object.Update`）。
 - /api/fs/copy：服务器端复制（`Fs.Copy`）。
 - /api/fs/rename：同目录重命名（`Fs.Move` 同目录分支）。
 - /api/fs/move：跨目录移动（但不能修改目标文件名）。
-- /api/fs/remove：删除（`deleteObject`/`Remove`）。
-- /api/fs/mkdir：创建目录（`Mkdir`）。
+- /api/fs/remove：删除文件与目录（`Remove`、`Purge`）。
+- /api/fs/mkdir：创建目录（`Mkdir`、`CreateDir`）。
 
-二、主要缺口与影响（按优先级）
-1) 目录级别原子移动（`DirMove`）
+二、核心实现与设计决策
+
+1) Dircache 初始化【关键决策】（alist.go:345）
+- 现实现：`dircache.New("", root, f)`
+- 含义：工作目录为空，Fs.root 作为"真实根"，允许任意访问
+- 效果：EnablePath 模式，Object.remote 相对于 Fs.root；getPath() 返回完整绝对路径
+- 设计理由：Alist 不限制根目录访问，后端管理自己的路径
+
+2) Object 路径缓存优化（alist.go:125-135, 1249-1280）
+- 添加字段：path、directoryPath、leaf、parentPath（替代 id）
+- getPath() 方法：lazy-load 并缓存绝对路径，防御双斜杠
+- 作用：减少重复调用 dirCache.FindPath()，优化嵌套目录性能
+
+3) dirPathLeaf() 嵌套目录修复【最近 Bug 修复】（alist.go:1318）
+- 问题：parentPath 存在时，原代码返回 (parentPath, remote)，导致路径翻倍
+- 修复：使用 `path.Base(remote)` 只返回文件名，避免 "/Test/A/F/F/F.txt" 错误
+- 效果：正确支持 F/F.txt 这样的嵌套文件上传
+
+4) CreateDir 根目录处理（alist.go:1510）
+- 修复：`if pathID == "" || pathID == "/"` 判断，避免双斜杠
+- 效果：正确构造根目录下的子目录路径
+
+5) Alist 500 错误兼容（alist.go:1310, 1370, 1578, 1648，共四处）
+- 问题：Alist 在某些目录不存在时返回 HTTP 500 而非 404
+- 处理：将 "code==500 && message contains 'object not found'" 视为目录不存在
+- 效果：列表目录失败改为正确返回空列表
+
+三、当前实现状态（完成度评估）
+
+已完整实现（可用）：
+- ✅ 文件上传（Object.Update → /api/fs/put）
+- ✅ 文件下载（Object.Open → /api/fs/get raw_url）
+- ✅ 单文件元数据查询（readMetaData → /api/fs/get，已优化）
+- ✅ 目录列表（List、ListDir → /api/fs/list）
+- ✅ 目录创建（Mkdir、CreateDir → /api/fs/mkdir）
+- ✅ 文件删除（Remove → /api/fs/remove）
+- ✅ 文件复制（Copy → /api/fs/copy，server-side）
+- ✅ 同目录重命名（Move 同目录 → /api/fs/rename）
+- ✅ 跨目录移动（Move 跨目录 → /api/fs/move）
+
+部分实现或已知限制：
+- ⚠️ 跨目录改名：Alist /api/fs/move 不支持改名参数，无法原子完成"移动+改名"
+- ⚠️ 目录原子移动（DirMove）：不支持，返回 fs.ErrorCantDirMove
+- ⚠️ 修改时间（SetModTime）：no-op，Alist 不支持
+- ⚠️ 哈希值（Hash()）：填充不稳定，依赖 Alist API 返回数据
+
+四、与 rclone Core 的交互约束
+
+- 根目录访问：受 dircache 设计约束；实际现在可访问任意 Fs.root（如 "/"）
+- 文件 ID：Alist 无文件 ID 概念，Object.ID() 返回空字符串
+- 错误语义：某些 API 错误未映射为 fs.ErrorCantCopy/Move，core 需猜测回退策略
+
+五、优化空间与建议（优先级排序）
+
+优先级 1（高）：错误语义明确化
+- 现状：`Fs.Copy`、`Fs.Move` 返回具体错误，core 无法区分"不支持"与"临时错误"
+- 建议：在不支持场景返回 `fs.ErrorCantCopy`、`fs.ErrorCantMove`，让 core 正确回退
+
+优先级 2（中高）：哈希值可靠填充
+- 现状：readMetaData 已填充 o.md5；上传后查询可能为空
+- 建议：在 Object.Update 成功路径检查 UploadResponse.Data，填充 o.md5；在 Hash() 方法实现慢查后备
+
+优先级 3（中）：单文件查询优先
+- 现状：readMetaData 已改用 /api/fs/get；Update 后查询已改用 /api/fs/get
+- 建议：检查其他地方是否仍用 /api/fs/list（如 About、统计等），可否改用 /api/fs/get
+
+优先级 4（低）：文档与测试
+- 补充单元/集成测试：partial 上传、嵌套目录、move/copy 冲突场景
+- 更新后端注释说明不支持的特性（SetModTime、DirMove 等）
+
+六、已应用的修改记录
+
+| 修改 | 位置 | 状态 | 说明 |
+|-----|------|------|------|
+| dircache 初始化改为 ("", root) | alist.go:345 | ✅ | 允许任意 Fs.root 访问 |
+| dirPathLeaf 改用 path.Base() | alist.go:1318 | ✅ | 修复嵌套目录翻倍问题 |
+| CreateDir 判断 pathID=="/" | alist.go:1510 | ✅ | 消除双斜杠 |
+| readMetaData 改用 /api/fs/get | alist.go:2033 | ✅ | 性能优化 |
+| Object.Update 后改用 /api/fs/get 查询 | alist.go:1968 | ✅ | 避免 list 延迟 |
+| Alist 500 错误处理 | 四处 | ✅ | 视为目录不存在 |
+| Object 结构优化（path、directoryPath、parentPath） | alist.go:125-135 | ✅ | 语义清晰，缓存路径 |
+
+七、测试验证场景
+
+已验证成功：
+- 单文件上传（A.txt, B.exe, C.dll, D.exec）
+- 嵌套目录上传（F/F.txt → /Test/A/F/F.txt）
+- 复制到根目录
+- 复制到子目录
+- 列表根目录与子目录
+
+推荐测试：
+1. 零字节文件上传
+2. 大文件上传与续传
+3. 深层嵌套目录（A/B/C/D 等）
+4. 与 --backup-dir、--suffix 的交互
+5. VFS mount 场景的读写一致性
+
+
 - 现状：`DirMove` 返回 `fs.ErrorCantDirMove`（Alist 没有原生目录移动）。
 - 影响：core 会回退为逐文件复制+删除，性能和原子性受损。
 - 建议：如果后端无法提供，应保持返回 `fs.ErrorCantDirMove` 并补充文档；若 Alist 后端新增目录移动 API，可实现该接口。
@@ -105,10 +202,23 @@
 
 -- 变更记录（简短） --
 
-- 已应用补丁：
+- 已应用补丁（第二阶段 - 核心 Bug 修复）：
+  - **dircache.New 参数顺序修正**（`alist.go:343`）：从 `New("", root, f)` 改为 `New(root, "/", f)`
+    - 原因：正确区分工作目录（root 如 "/Test"）与后端真实根（"/"）
+    - 效果：允许 dircache 通过 FindLeaf/CreateDir 正确创建中间目录
+  
+  - **双斜杠 Bug 修正**（`alist.go:1894`）：路径构造从 `directoryPath + "/" + leaf` 改为 `directoryPath + leaf`
+    - 原因：dircache 返回的 directoryPath 已包含必要的路径分隔逻辑
+    - 效果：消除了 "//" 双斜杠问题
+  
+  - **Alist 服务器端 500 错误兼容处理**（四处修改：`alist.go:1310,1370,1578,1648`）：
+    - 将 Alist 返回的 HTTP 500 + "object not found" 消息视为目录不存在
+    - 效果验证：**"列表目录失败: 代码=500" 错误已消失**，改为正确返回空列表
+
+- 已应用补丁（第一阶段 - 元数据获取优化）：
   - `backend/alist/types.go`: 新增 `GetRequest` / `GetResponse`。
-  - `backend/alist/alist.go`: 替换 `readMetaData` 的 `/api/fs/list` 为 `/api/fs/get` 单文件查询；替换 `Object.Update` 在 uploadResp.Data==nil 时的回退逻辑，从 `/api/fs/list` 改为 `/api/fs/get`。
-  - 其它早先变更（会话记录中已保存）：`createObject` 记录 `parent`、增加 `dirPathLeaf` helper、统一 `Copy`/`Move`/`Open`/`Remove` 的路径构造逻辑。
+  - `backend/alist/alist.go`: 替换 `readMetaData` 的 `/api/fs/list` 为 `/api/fs/get` 单文件查询。
+  - 其它早先变更：`createObject` 记录 `parent`、增加 `dirPathLeaf` helper。
 
 -- 推荐下一步（短期，优先级排序） --
 
@@ -258,7 +368,10 @@
 
 ---
 
-### ✅ 规则 9：不允许对“**附：助手行为规则**”以后的内容做任何改动
+### ✅ 规则 9：在需要调用终端命令时，尽量采用“pwsh”命令
+---
+
+### ✅ 规则 10：不允许对“**附：助手行为规则**”以后的内容做任何改动
 
 ---
 

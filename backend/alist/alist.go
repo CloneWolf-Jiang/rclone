@@ -123,13 +123,15 @@ type Fs struct {
 
 // Object 代表远程存储中的一个对象（文件）
 type Object struct {
-	fs      *Fs       // 所属的文件系统
-	remote  string    // 远程路径
-	id      string    // 文件ID
-	parent  string    // 父目录ID
-	modTime time.Time // 修改时间
-	md5     string    // MD5哈希值
-	size    int64     // 文件大小（字节）
+	fs            *Fs       // 所属的文件系统
+	remote        string    // 远程路径（相对于 Fs.root 的相对路径）
+	path          string    // 完整绝对路径（用于 API 调用，例如 "/Test/A/A.txt"）
+	directoryPath string    // 文件所在目录的完整绝对路径（缓存，避免重复计算）
+	leaf          string    // 文件名（缓存，避免重复计算）
+	parentPath    string    // 父目录路径（缓存优化，避免重复查询）
+	modTime       time.Time // 修改时间
+	md5           string    // MD5哈希值
+	size          int64     // 文件大小（字节）
 }
 
 // parseModifiedTime 解析Alist API返回的modified字段（字符串）为Unix时间戳
@@ -337,7 +339,11 @@ func NewFs(ctx context.Context, name, root string, m configmap.Mapper) (fs.Fs, e
 		pacer: fs.NewPacer(ctx, pacer.NewDefault(pacer.MinSleep(minSleep), pacer.MaxSleep(maxSleep), pacer.DecayConstant(decayConstant))),
 	}
 
-	// 步骤6：初始化目录缓存（trueRootID变量在alist api中暂时可有可无）
+	// 步骤6：初始化目录缓存
+	// 正确参数：(工作目录, 后端真实根, DirCacher接口)
+	// Alist的真实根是"/"，工作目录通过root参数指定
+
+	//f.dirCache = dircache.New(root, "/", f)
 	f.dirCache = dircache.New("", root, f)
 
 	// 步骤7：设置REST客户端的基础URL
@@ -502,8 +508,8 @@ func NewFs(ctx context.Context, name, root string, m configmap.Mapper) (fs.Fs, e
 		// 分割路径获得文件名和父目录路径
 		newRoot, remote := dircache.SplitPath(root)
 		tempF := *f
-		// 注意：现在使用路径作为目录标识符（不是OpenDrive的"0"）
-		tempF.dirCache = dircache.New(newRoot, newRoot, &tempF)
+		// 注意：分割路径时，newRoot作为工作目录，"/"作为后端真实根
+		tempF.dirCache = dircache.New(newRoot, "/", &tempF)
 		tempF.root = newRoot
 
 		// 尝试查找父目录
@@ -719,8 +725,8 @@ func (f *Fs) Copy(ctx context.Context, src fs.Object, remote string) (fs.Object,
 		return nil, fs.ErrorCantCopy
 	}
 
-	// 获取源文件的完整路径（优先使用对象 parent，若缺失则通过 dirCache 查找）
-	srcDir, srcName, err := f.dirPathLeaf(ctx, srcObj.remote, srcObj.parent)
+	// 获取源文件的完整路径（优先使用对象 parentPath，若缺失则通过 dirCache 查找）
+	srcDir, srcName, err := f.dirPathLeaf(ctx, srcObj.remote, srcObj.parentPath)
 	if err != nil {
 		fs.Debugf(nil, "Copy: 无法解析源路径: %v", err)
 		return nil, err
@@ -851,8 +857,8 @@ func (f *Fs) Move(ctx context.Context, src fs.Object, remote string) (fs.Object,
 		return nil, fs.ErrorCantMove
 	}
 
-	// 源完整路径（优先使用对象 parent，若缺失则通过 dirCache 查找）
-	srcDir, srcName, err := f.dirPathLeaf(ctx, srcObj.remote, srcObj.parent)
+	// 源完整路径（优先使用对象 parentPath，若缺失则通过 dirCache 查找）
+	srcDir, srcName, err := f.dirPathLeaf(ctx, srcObj.remote, srcObj.parentPath)
 	if err != nil {
 		fs.Debugf(nil, "Move: 无法解析源路径: %v", err)
 		return nil, err
@@ -1211,13 +1217,12 @@ func (f *Fs) newObjectWithInfo(ctx context.Context, remote string, file *File, p
 	var o *Object
 	if nil != file {
 		o = &Object{
-			fs:      f,
-			remote:  remote,
-			id:      file.FileID,
-			parent:  parent,
-			modTime: time.Unix(file.DateModified, 0),
-			size:    file.Size,
-			md5:     file.FileHash,
+			fs:         f,
+			remote:     remote,
+			parentPath: parent,
+			modTime:    time.Unix(file.DateModified, 0),
+			size:       file.Size,
+			md5:        file.FileHash,
 		}
 	} else {
 		o = &Object{
@@ -1240,6 +1245,38 @@ func (f *Fs) NewObject(ctx context.Context, remote string) (fs.Object, error) {
 	return f.newObjectWithInfo(ctx, remote, nil, "")
 }
 
+// getPath 返回对象的完整绝对路径（用于 API 调用）
+// 优先返回缓存的 path 字段；如果为空则通过 dirCache 计算并缓存
+// 同时缓存 directoryPath 和 leaf，避免重复计算
+// 返回形如 "/Test/A/A.txt" 的完整绝对路径
+func (o *Object) getPath(ctx context.Context) (string, error) {
+	if o.path != "" {
+		return o.path, nil
+	}
+
+	// 计算并缓存完整的绝对路径及其组成部分
+	leaf, directoryPath, err := o.fs.dirCache.FindPath(ctx, o.remote, false)
+	if err != nil {
+		return "", err
+	}
+
+	// 缓存 directoryPath 和 leaf
+	o.directoryPath = directoryPath
+	o.leaf = leaf
+
+	// 拼接绝对路径
+	var fullPath string
+	if directoryPath == "/" {
+		fullPath = "/" + leaf
+	} else {
+		fullPath = directoryPath + "/" + leaf
+	}
+
+	// 缓存到 path 字段
+	o.path = fullPath
+	return fullPath, nil
+}
+
 // 从传入的参数创建一个半成品对象，该对象
 // 必须调用 setMetaData 来完成初始化
 //
@@ -1254,22 +1291,29 @@ func (f *Fs) createObject(ctx context.Context, remote string, modTime time.Time,
 	}
 	// fs.Debugf(nil, "\n...leaf %#v\n...id %#v", leaf, directoryID)
 	// 正在构建的临时对象
-	// 注意: 记录父目录 (directoryID) 到对象的 parent 字段，
+	// 注意: 记录父目录 (directoryID) 到对象的 parentPath 字段，
 	// 以便后续的 Move/Copy 操作能正确构造源完整路径，
-	// 避免在上传 partial 后 parent 为空导致的路径丢失问题。
+	// 避免在上传 partial 后 parentPath 为空导致的路径丢失问题。
 	o = &Object{
-		fs:     f,
-		remote: remote,
-		parent: directoryID,
+		fs:         f,
+		remote:     remote,
+		parentPath: directoryID,
 	}
 	return o, f.opt.Enc.FromStandardName(leaf), directoryID, nil
 }
 
 // dirPathLeaf 返回给定 remote 的目录路径和叶名。
 // 优先使用传入的 parent；如果 parent 为空则使用 dirCache 查找。
+//
+// 当 parent 不为空时，parent 已是完整的父目录绝对路径，
+// 因此只需从 remote 中提取最后一个分量作为叶文件名
 func (f *Fs) dirPathLeaf(ctx context.Context, remote, parent string) (dirPath string, leaf string, err error) {
 	if parent != "" {
-		return parent, remote, nil
+		// parent 不为空说明已有完整的父目录路径
+		// remote 可能是相对路径（如 "F/F.txt"），需要只取最后一个分量
+		// 用 path.Base 提取最后一个分量
+		fileName := path.Base(remote)
+		return parent, fileName, nil
 	}
 	leaf, dirPath, err = f.dirCache.FindPath(ctx, remote, false)
 	if err != nil {
@@ -1303,6 +1347,11 @@ func (f *Fs) readMetaDataForFolderID(ctx context.Context, id string) (info *Fold
 	}
 
 	if listResp.Code != 200 {
+		// 某些 Alist 实现会在目录不存在时返回 500 并带上 "object not found" 的消息，
+		// 将其视为目录不存在以兼容 rclone 的预期行为。
+		if listResp.Code == 404 || (listResp.Code == 500 && strings.Contains(strings.ToLower(listResp.Message), "object not found")) {
+			return nil, fs.ErrorDirNotFound
+		}
 		return nil, fmt.Errorf("获取文件夹列表失败: 代码=%d, 消息=%s", listResp.Code, listResp.Message)
 	}
 
@@ -1359,7 +1408,8 @@ func (f *Fs) ListDir(ctx context.Context, dirID string) (entries fs.DirEntries, 
 	}
 
 	if listResp.Code != 200 {
-		if listResp.Code == 404 {
+		// 兼容性：当后端在目录不存在时返回 500 且消息包含 "object not found"，当作 404 处理
+		if listResp.Code == 404 || (listResp.Code == 500 && strings.Contains(strings.ToLower(listResp.Message), "object not found")) {
 			return fs.DirEntries{}, nil
 		}
 		return nil, fmt.Errorf("列表目录失败: 代码=%d, 消息=%s", listResp.Code, listResp.Message)
@@ -1463,14 +1513,10 @@ func (f *Fs) CreateDir(ctx context.Context, pathID, leaf string) (newID string, 
 	// 构造新目录的完整路径
 	leaf = f.opt.Enc.FromStandardName(leaf)
 	var newPath string
-	if pathID == "" {
-		// 在dircache根目录下创建（对应于f.root位置）
-		// 使用f.root而不是"/"，以正确支持root_path配置
-		if f.root == "" || f.root == "/" {
-			newPath = "/" + leaf
-		} else {
-			newPath = f.root + "/" + leaf
-		}
+	if pathID == "" || pathID == "/" {
+		// 在dircache根目录下创建（对应于f.root位置或API根目录）
+		// pathID 可能为空（dircache根）或 "/" （API根）
+		newPath = "/" + leaf
 	} else {
 		// 在子目录下创建
 		newPath = pathID + "/" + leaf
@@ -1566,6 +1612,11 @@ func (f *Fs) FindLeaf(ctx context.Context, pathID, leaf string) (pathIDOut strin
 
 	// 检查API响应状态
 	if listResp.Code != 200 {
+		// 将后端在目录不存在时返回的 500 + "object not found" 视为未找到
+		if listResp.Code == 404 || (listResp.Code == 500 && strings.Contains(strings.ToLower(listResp.Message), "object not found")) {
+			fs.Debugf(nil, "FindLeaf: 目录 %q 未找到 (后端返回 %d %q)", apiPath, listResp.Code, listResp.Message)
+			return "", false, nil
+		}
 		fs.Debugf(nil, "FindLeaf: API 错误 %q: 代码=%d, 消息=%s", apiPath, listResp.Code, listResp.Message)
 		return "", false, fmt.Errorf("列表目录失败 %q: %s", apiPath, listResp.Message)
 	}
@@ -1631,7 +1682,8 @@ func (f *Fs) List(ctx context.Context, dir string) (entries fs.DirEntries, err e
 	}
 
 	if listResp.Code != 200 {
-		if listResp.Code == 404 {
+		// 兼容某些 Alist 实现：当目录不存在时返回 500 且消息包含 "object not found"
+		if listResp.Code == 404 || (listResp.Code == 500 && strings.Contains(strings.ToLower(listResp.Message), "object not found")) {
 			return fs.DirEntries{}, nil
 		}
 		return nil, fmt.Errorf("列表目录失败: 代码=%d, 消息=%s", listResp.Code, listResp.Message)
@@ -1734,16 +1786,10 @@ func (o *Object) Open(ctx context.Context, options ...fs.OpenOption) (in io.Read
 	fs.FixRangeOption(options, o.size)
 
 	// 对于 Alist，需要先获取文件的 raw_url，然后下载
-	// 构造完整的绝对路径，优先使用 parent 字段，若缺失则通过 dirCache 查找
-	dirPath, leaf, err := o.fs.dirPathLeaf(ctx, o.remote, o.parent)
+	// 获取文件的完整绝对路径（缓存计算结果以避免重复拼接）
+	fullPath, err := o.getPath(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("无法解析对象路径: %w", err)
-	}
-	var fullPath string
-	if dirPath == "" || dirPath == "/" {
-		fullPath = "/" + leaf
-	} else {
-		fullPath = dirPath + "/" + leaf
 	}
 
 	// 第一步：调用 /api/fs/get 获取文件信息（包括 raw_url）
@@ -1815,8 +1861,8 @@ func (o *Object) Open(ctx context.Context, options ...fs.OpenOption) (in io.Read
 func (o *Object) Remove(ctx context.Context) error {
 	// fs.Debugf(nil, "Remove(\"%s\")", o.remote)
 	// 使用 Alist /api/fs/remove API 删除文件
-	// 获取父目录和文件名分别传递（优先使用 parent，若缺失则通过 dirCache 查找）
-	dirPath, leaf, err := o.fs.dirPathLeaf(ctx, o.remote, o.parent)
+	// 获取父目录和文件名分别传递（优先使用 parentPath，若缺失则通过 dirCache 查找）
+	dirPath, leaf, err := o.fs.dirPathLeaf(ctx, o.remote, o.parentPath)
 	if err != nil {
 		return fmt.Errorf("删除对象时无法解析路径: %w", err)
 	}
@@ -1869,18 +1915,10 @@ func (o *Object) Storable() bool {
 // 返回值：
 //   - 错误信息（如果操作失败）
 func (o *Object) Update(ctx context.Context, in io.Reader, src fs.ObjectInfo, options ...fs.OpenOption) error {
-	// 获取文件的完整路径
-	leaf, directoryPath, err := o.fs.dirCache.FindPath(ctx, o.remote, false)
+	// 获取文件的完整绝对路径（缓存计算结果以避免重复拼接）
+	fullPath, err := o.getPath(ctx)
 	if err != nil && err != fs.ErrorDirNotFound {
 		return fmt.Errorf("查询路径失败: %w", err)
-	}
-
-	// 构造完整的绝对路径
-	fullPath := directoryPath
-	if directoryPath != "/" {
-		fullPath = directoryPath + "/" + leaf
-	} else {
-		fullPath = "/" + leaf
 	}
 
 	fs.Debugf(o, "Update: 上传文件 %q 大小=%d 字节", fullPath, src.Size())
@@ -1988,20 +2026,14 @@ func (o *Object) Update(ctx context.Context, in io.Reader, src fs.ObjectInfo, op
 }
 
 func (o *Object) readMetaData(ctx context.Context) (err error) {
-	leaf, directoryPath, err := o.fs.dirCache.FindPath(ctx, o.remote, false)
+	// 获取完整的绝对路径（第一次调用时计算，之后使用缓存）
+	// 同时会缓存 directoryPath 和 leaf
+	fullPath, err := o.getPath(ctx)
 	if err != nil {
 		if err == fs.ErrorDirNotFound {
 			return fs.ErrorObjectNotFound
 		}
 		return err
-	}
-
-	// 构造完整路径并使用 /api/fs/get 获取单个文件信息（更高效且语义明确）
-	var fullPath string
-	if directoryPath == "/" {
-		fullPath = "/" + leaf
-	} else {
-		fullPath = directoryPath + "/" + leaf
 	}
 
 	var getResp GetResponse
@@ -2025,25 +2057,26 @@ func (o *Object) readMetaData(ctx context.Context) (err error) {
 	}
 
 	// 填充对象元数据
-	o.id = getResp.Data.Name
 	o.modTime = time.Unix(parseModifiedTime(getResp.Data.Modified), 0)
 	o.size = getResp.Data.Size
 	// 尽量填充哈希信息（如有返回）
 	if getResp.Data.HashInfo != "" {
 		o.md5 = getResp.Data.HashInfo
 	}
-	o.parent = directoryPath
+	o.parentPath = o.directoryPath
 	return nil
 }
 
 // ID 返回对象的 ID（如已知），否则返回 ""
+// Alist 不提供文件ID，使用路径作为唯一标识，因此返回空字符串
 func (o *Object) ID() string {
-	return o.id
+	return ""
 }
 
 // ParentID 返回对象的父目录 ID（如已知），否则返回 ""
+// Alist 不提供父目录ID，使用路径作为标识，因此返回空字符串
 func (o *Object) ParentID() string {
-	return o.parent
+	return ""
 }
 
 // 检查接口实现是否满足
