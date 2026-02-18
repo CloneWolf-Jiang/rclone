@@ -1766,7 +1766,15 @@ func (o *Object) String() string {
 	}
 	// 返回显示路径：包含 displayPath 但不含 root_path
 	// 这样用户在日志中看到的路径更清晰（相对于 root_path 的部分）
-	return joinPath(o.fs.displayPath, o.remote)
+	s := joinPath(o.fs.displayPath, o.remote)
+	// 仅用于日志/显示：确保以 '/' 开头以便更明显地区分绝对显示路径
+	if s == "" {
+		return "/"
+	}
+	if !strings.HasPrefix(s, "/") {
+		s = "/" + s
+	}
+	return s
 }
 
 // Remote 返回远程路径
