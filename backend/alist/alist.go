@@ -1696,6 +1696,13 @@ func (f *Fs) List(ctx context.Context, dir string) (entries fs.DirEntries, err e
 	}
 
 	if listResp.Code != 200 {
+		// 错误码定义与处理：
+		// 200: 操作成功
+		// 400: 请求参数错误（如路径不存在、权限不足等）
+		// 401: 未授权（token 无效或过期）
+		// 403: 禁止访问（可能是密码保护的目录）
+		// 404: 文件或目录不存在
+		// 500: 服务器内部错误；Alist 在某些情况下会返回 500 并在消息中包含 "object not found"
 		// 兼容某些 Alist 实现：当目录不存在时返回 500 且消息包含 "object not found"
 		if listResp.Code == 404 || (listResp.Code == 500 && strings.Contains(strings.ToLower(listResp.Message), "object not found")) {
 			return fs.DirEntries{}, nil
@@ -1763,10 +1770,9 @@ func (o *Object) String() string {
 }
 
 // Remote 返回远程路径
+// 注意：必须返回相对于 Fs.root 的短路径，以保持与 dircache 的兼容性
 func (o *Object) Remote() string {
-	// 返回相对于 displayPath 的完整路径（不含 root_path）
-	// 这样 rclone core 的日志输出会显示完整相对路径而不是仅文件名
-	return joinPath(o.fs.displayPath, o.remote)
+	return o.remote
 }
 
 // Hash 返回对象的 Md5 值，为小写十六进制字符串
