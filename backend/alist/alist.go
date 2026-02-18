@@ -111,14 +111,15 @@ type Options struct {
 
 // Fs 表示远程存储
 type Fs struct {
-	name     string             // 远程名称
-	root     string             // 根路径
-	opt      Options            // 已解析的配置选项
-	features *fs.Features       // 可选功能集合
-	srv      *rest.Client       // REST客户端
-	pacer    *fs.Pacer          // 用于限速和重试的步调器
-	token    string             // 认证令牌
-	dirCache *dircache.DirCache // 目录缓存
+	name        string             // 远程名称
+	root        string             // 根路径（API 调用用，完整绝对路径）
+	displayPath string             // 显示路径（相对于 root_path 的路径，用于日志和用户输出）
+	opt         Options            // 已解析的配置选项
+	features    *fs.Features       // 可选功能集合
+	srv         *rest.Client       // REST客户端
+	pacer       *fs.Pacer          // 用于限速和重试的步调器
+	token       string             // 认证令牌
+	dirCache    *dircache.DirCache // 目录缓存
 }
 
 // Object 代表远程存储中的一个对象（文件）
@@ -132,6 +133,11 @@ type Object struct {
 	modTime       time.Time // 修改时间
 	md5           string    // MD5哈希值
 	size          int64     // 文件大小（字节）
+}
+
+// FullPath 返回完整绝对路径（用于 API 调用）
+func (o *Object) FullPath() string {
+	return joinPath(o.fs.root, o.remote)
 }
 
 // parseModifiedTime 解析Alist API返回的modified字段（字符串）为Unix时间戳
@@ -151,17 +157,28 @@ func parseModifiedTime(modifiedStr string) int64 {
 	return 0
 }
 
-// parsePath 解析传入的路径
-// 为 Alist API 保留前导斜杠，即离去末尾斜杠
-func parsePath(path string) (root string) {
-	// 仅删除末尾斜杠，保留前导斜杠
-	// "/" → "/", "/夸克网盘/" → "/夸克网盘", "/foo/bar/" → "/foo/bar"
-	root = strings.TrimSuffix(path, "/")
-	if root == "" {
-		// 空路径或只有 "/" 应该导致 "/"
-		root = "/"
+// normalizePath 规范化输入路径为标准格式
+// 输入可能是: "", "  ", "/", "\\test", "test", "/test", "/test/", "test/", etc.
+// 输出: 单个 "/" 或 "/path/to/dir"（无末尾斜杠）
+func normalizePath(p string) string {
+	p = strings.TrimSpace(p) // 去空白
+	if p == "" {
+		return "/"
 	}
-	return
+	p = strings.ReplaceAll(p, "\\", "/") // Windows 风格转 Unix
+	p = strings.Trim(p, "/")             // 去前后 /
+	if p == "" {
+		return "/"
+	}
+	return "/" + p
+}
+
+// joinPath 拼接根路径与相对路径
+func joinPath(root, rel string) string {
+	if rel == "" {
+		return root
+	}
+	return path.Join(root, rel)
 }
 
 // ------------------------------------------------------------
@@ -277,28 +294,31 @@ func NewFs(ctx context.Context, name, root string, m configmap.Mapper) (fs.Fs, e
 	// 1. 如果配置了root_path，作为基础路径
 	// 2. 如果URL中有path参数，追加到root_path之后
 	// 3. 如果都没有，使用默认的"/"（空字符串表示根目录）
-	var rootPath string
-	if opt.RootPath != "" {
-		// 配置中有root_path，作为基础路径
-		rootPath = parsePath(opt.RootPath)
-		// 如果URL中还有路径，追加其后
-		if root != "" {
-			urlPath := parsePath(root)
-			if urlPath != "" && urlPath != "/" {
-				// 移除urlPath的前导斜杠，避免双斜杠
-				urlPath = strings.TrimPrefix(urlPath, "/")
-				rootPath += urlPath
-			}
-		}
+	// 步骤2：统一规范化根路径（单一规范化点，避免冗余）
+	// 优先级: opt.RootPath（配置） > root（URL 参数）> 默认 "/"
+	var displayPath string // 用于日志显示的路径（不含root_path前缀）
+	if opt.RootPath != "" && root != "" {
+		// 同时指定了配置 root_path 和 URL path：拼接
+		configRoot := normalizePath(opt.RootPath) // 如 "/rclone/releases"
+		// 规范化 URL path：去空白、转斜杠、去前后 /
+		urlPath := strings.TrimSpace(root)
+		urlPath = strings.ReplaceAll(urlPath, "\\", "/")
+		urlPath = strings.Trim(urlPath, "/") // 如 "Test/A"
+		displayPath = normalizePath(urlPath) // 用于显示的路径："/Test/A"
+		root = joinPath(configRoot, urlPath) // API 调用的完整路径："/rclone/releases/Test/A"
+	} else if opt.RootPath != "" {
+		// 仅配置了 root_path
+		root = normalizePath(opt.RootPath)
+		displayPath = "/" // 默认显示为根
+	} else if root != "" {
+		// 仅 URL path
+		root = normalizePath(root)
+		displayPath = root // 显示路径即为完整路径
 	} else {
-		// 没有配置root_path，使用URL中的路径或默认为""
-		if root != "" {
-			rootPath = parsePath(root)
-		} else {
-			rootPath = ""
-		}
+		// 默认为根目录
+		root = "/"
+		displayPath = "/"
 	}
-	root = rootPath
 
 	// 步骤3：验证认证配置有效（token 或 用户名+密码 二选一）
 	if opt.Token == "" {
@@ -331,12 +351,13 @@ func NewFs(ctx context.Context, name, root string, m configmap.Mapper) (fs.Fs, e
 	// 配置errorHandler处理非2xx HTTP响应
 	// 创建pacer进行API调用限流和重试策略
 	f := &Fs{
-		name:  name,      // 远程名称
-		root:  root,      // 确定后的根路径
-		opt:   *opt,      // 解析后的配置选项
-		token: opt.Token, // ← 需要添加这行
-		srv:   rest.NewClient(fshttp.NewClient(ctx)).SetErrorHandler(errorHandler),
-		pacer: fs.NewPacer(ctx, pacer.NewDefault(pacer.MinSleep(minSleep), pacer.MaxSleep(maxSleep), pacer.DecayConstant(decayConstant))),
+		name:        name,        // 远程名称
+		root:        root,        // API 调用的根路径
+		displayPath: displayPath, // 用于日志和用户输出的路径
+		opt:         *opt,        // 解析后的配置选项
+		token:       opt.Token,
+		srv:         rest.NewClient(fshttp.NewClient(ctx)).SetErrorHandler(errorHandler),
+		pacer:       fs.NewPacer(ctx, pacer.NewDefault(pacer.MinSleep(minSleep), pacer.MaxSleep(maxSleep), pacer.DecayConstant(decayConstant))),
 	}
 
 	// 步骤6：初始化目录缓存
@@ -544,12 +565,13 @@ func NewFs(ctx context.Context, name, root string, m configmap.Mapper) (fs.Fs, e
 	return f, nil
 }
 
-// rootSlash 如果根路径不为空，返回带有斜杠的根路径；否则返回空字符串
+// rootSlash 返回带有末尾斜杠的根路径（作为目录标识符）
+// 用于某些 API 或缓存需要目录标识的场景
 //
 //nolint:unused // 保留给未来使用
 func (f *Fs) rootSlash() string {
-	if f.root == "" {
-		return f.root
+	if f.root == "" || f.root == "/" {
+		return "/"
 	}
 	return f.root + "/"
 }
@@ -574,12 +596,8 @@ func errorHandler(resp *http.Response) error {
 func (f *Fs) Mkdir(ctx context.Context, dir string) error {
 	//fs.Debugf(nil, "Mkdir(\"%s\") 开始执行", dir)
 
-	var fullPath string
-	if f.root == "" || f.root == "/" {
-		fullPath = "/" + dir
-	} else {
-		fullPath = f.root + "/" + dir
-	}
+	// 使用 joinPath() 统一处理路径拼接，避免手动拼接导致的双斜杠问题
+	fullPath := joinPath(f.root, dir)
 
 	fs.Debugf(nil, "Mkdir: 计算的完整路径 fullPath=%q (dir=%q, f.root=%q)", fullPath, dir, f.root)
 
@@ -665,8 +683,8 @@ func (f *Fs) deleteObject(ctx context.Context, id string) error {
 // purgeCheck 删除根目录，如果 check 设置为 true，则
 // 如果它有任何内容，拒绝这样做
 func (f *Fs) purgeCheck(ctx context.Context, dir string, check bool) error {
-	root := path.Join(f.root, dir)
-	if root == "" {
+	root := joinPath(f.root, dir)
+	if root == "" || root == "/" {
 		return errors.New("无法清除根目录")
 	}
 	dc := f.dirCache
@@ -1739,12 +1757,16 @@ func (o *Object) String() string {
 	if o == nil {
 		return "<nil>"
 	}
-	return o.remote
+	// 返回显示路径：包含 displayPath 但不含 root_path
+	// 这样用户在日志中看到的路径更清晰（相对于 root_path 的部分）
+	return joinPath(o.fs.displayPath, o.remote)
 }
 
 // Remote 返回远程路径
 func (o *Object) Remote() string {
-	return o.remote
+	// 返回相对于 displayPath 的完整路径（不含 root_path）
+	// 这样 rclone core 的日志输出会显示完整相对路径而不是仅文件名
+	return joinPath(o.fs.displayPath, o.remote)
 }
 
 // Hash 返回对象的 Md5 值，为小写十六进制字符串
