@@ -26,12 +26,16 @@ on:
 jobs:
   build:
     if: inputs.manual || (github.repository == (inputs.repo || 'CloneWolf-Jiang/rclone') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name))
-    timeout-minutes: 60
+    # 超时时间：可根据硬件性能和网络速度调整（单位：分钟）
+    # 上传腾讯云时间较长，建议设置为 90-120 分钟
+    timeout-minutes: 600
     defaults:
       run:
         shell: bash
     strategy:
       fail-fast: false
+      # 方案A：并发控制 - 同时最多运行2个job，防止自托管Runner资源不足
+      max-parallel: 2
       matrix:
         job_name: ['linux', 'linux_386', 'mac_amd64', 'mac_arm64', 'windows', 'other_os', 'go1.24']
 
@@ -95,7 +99,10 @@ jobs:
 
     name: ${{ matrix.job_name }}
 
-    runs-on: ${{ matrix.os }}
+    # 原配置: runs-on: ${{ matrix.os }}
+    # 新配置: Linux相关任务使用自托管Runner，其他任务继续使用GitHub官方Runner
+    # 原因: 自托管Runner拥有充足的硬盘空间和较强的性能，可加快编译速度
+    runs-on: ${{ (matrix.job_name == 'linux' || matrix.job_name == 'linux_386' || matrix.job_name == 'other_os' || matrix.job_name == 'go1.24') && 'self-hosted' || matrix.os }}
 
     steps:
       - name: Checkout
@@ -207,10 +214,16 @@ jobs:
         if: env.RCLONE_CONFIG_PASS != '' && matrix.deploy && github.head_ref == '' && github.repository == (inputs.repo || 'CloneWolf-Jiang/rclone')
 
   lint:
+    # 方案A：等待build job完成后再执行（保证资源不冲突）
+    needs: build
     if: inputs.manual || (github.repository == (inputs.repo || 'CloneWolf-Jiang/rclone') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name))
-    timeout-minutes: 30
+    # 超时时间：Lint任务包含代码检查和漏洞扫描，建议 30-45 分钟
+    timeout-minutes: 70
     name: "lint"
-    runs-on: ubuntu-latest
+    # 原配置: runs-on: ubuntu-latest
+    # 新配置: runs-on: self-hosted
+    # 原因: Lint任务为纯CPU密集型任务，使用自托管Runner可节省GitHub免费额度
+    runs-on: self-hosted
 
     steps:
       - name: Get runner parameters
@@ -304,10 +317,16 @@ jobs:
         if: github.event_name == 'pull_request'
 
   android:
+    # 方案A：等待build job完成后再执行（保证资源不冲突）
+    needs: build
     if: inputs.manual || (github.repository == (inputs.repo || 'CloneWolf-Jiang/rclone') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name))
-    timeout-minutes: 30
+    # 超时时间：Android编译4个架构＋上传腾讯云较耗时，建议 40-60 分钟
+    timeout-minutes: 70
     name: "android-all"
-    runs-on: ubuntu-latest
+    # 原配置: runs-on: ubuntu-latest
+    # 新配置: runs-on: self-hosted
+    # 原因: Android编译时间较长（~15-20分钟），使用自托管Runner可加快构建，并保留GitHub Actions免费额度用于其他关键任务
+    runs-on: self-hosted
 
     steps:
       - name: Checkout

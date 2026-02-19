@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Self-hosted Runner 完整部署流程</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 60px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 36px;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 40px;
+            padding: 12px;
+            background: #f5f5f5;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+        }
+        
+        h2 {
+            font-size: 24px;
+            color: #1a1a1a;
+            margin-top: 50px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #2196F3;
+        }
+        
+        h3 {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        h4 {
+            font-size: 15px;
+            color: #34495e;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        
+        .info-box {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+            border-left: 5px solid;
+            background-color: #f5f5f5;
+        }
+        
+        .info-box.success {
+            background-color: #e8f5e9;
+            border-left-color: #4CAF50;
+        }
+        
+        .info-box.info {
+            background-color: #e3f2fd;
+            border-left-color: #2196F3;
+        }
+        
+        .info-box.warning {
+            background-color: #fff3e0;
+            border-left-color: #ff9800;
+        }
+        
+        .info-box.danger {
+            background-color: #ffebee;
+            border-left-color: #f44336;
+        }
+        
+        .code-block {
+            background-color: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            border: 1px solid #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            display: block;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 13px;
+        }
+        
+        table th {
+            background-color: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #ddd;
+        }
+        
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        table tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .highlight {
+            background-color: #fff59d;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+        
+        .spec-item {
+            padding: 15px;
+            background: #f0f5ff;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+        }
+        
+        .spec-label {
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        
+        .spec-value {
+            color: #666;
+            margin-top: 3px;
+        }
+        
+        .step-box {
+            padding: 20px;
+            margin: 15px 0;
+            background: #fafafa;
+            border-left: 5px solid #2196F3;
+            border-radius: 6px;
+        }
+        
+        .step-box h4 {
+            margin-top: 0;
+            color: #2196F3;
+        }
+        
+        .page-break {
+            page-break-after: always;
+            margin: 40px 0;
+        }
+        
+        .footer {
+            text-align: right;
+            font-size: 12px;
+            color: #999;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .container {
+                box-shadow: none;
+                padding: 40px;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💻 GitHub Actions 自托管 Runner 完整部署指南</h1>
+        <div class="subtitle">Rocky Linux 9.7 + 无人值守部署 | 基于实际部署过程 | Runner v2.331.0</div>
+
+        <h2>💡 硬件配置与性能分析</h2>
+        
+        <h3>我的电脑规格</h3>
+        <div class="spec-grid">
+            <div class="spec-item">
+                <div class="spec-label">CPU</div>
+                <div class="spec-value">Intel Core i7-5500U @ 2.4GHz (2核4线程)</div>
+            </div>
+            <div class="spec-item">
+                <div class="spec-label">内存</div>
+                <div class="spec-value">8GB DDR3L</div>
+            </div>
+            <div class="spec-item">
+                <div class="spec-label">硬盘</div>
+                <div class="spec-value">256GB SSD (根分区 40GB)</div>
+            </div>
+            <div class="spec-item">
+                <div class="spec-label">操作系统</div>
+                <div class="spec-value">Rocky Linux 9.7 (蓝矿石)</div>
+            </div>
+        </div>
+
+        <h3>这个配置能胜任什么</h3>
+        <ul>
+            <li>✅ 稳定支持 rclone 项目的 8-10 个并发 CI/CD 任务</li>
+            <li>✅ 日常编译没有压力，多线程构建需要一点耐心</li>
+            <li>✅ 适合中小型开源项目的自动化构建</li>
+        </ul>
+
+        <h3>运行时性能表现</h3>
+        <table>
+            <tr>
+                <th>状态</th>
+                <th>CPU 占用</th>
+                <th>内存占用</th>
+            </tr>
+            <tr>
+                <td>🟢 空闲</td>
+                <td>2-5%</td>
+                <td>150MB</td>
+            </tr>
+            <tr>
+                <td>🟡 编译中</td>
+                <td>60-80%</td>
+                <td>1.2GB</td>
+            </tr>
+            <tr style="background-color: #fff3cd;">
+                <td>🟠 3个并发</td>
+                <td>90%+</td>
+                <td>2.5GB</td>
+            </tr>
+        </table>
+
+        <h3>硬盘空间分布</h3>
+        <div class="code-block">256GB 总容量
+├─ Rocky Linux 系统文件: 7GB
+├─ GitHub Actions Runner: 800MB
+├─ 工作目录 (_work): 30-40GB 可用
+└─ 单次构建产物: 500MB-2GB (临时)</div>
+
+        <h2>🎯 前置要求与准备清单</h2>
+        
+        <h3>必需物品与权限</h3>
+        <ul>
+            <li>☑️ 一台 USB 驱动器（8GB+）</li>
+            <li>☑️ balenaEtcher（用于烧写系统镜像）</li>
+            <li>☑️ Rocky Linux 9.7 ISO 镜像（约 12GB）</li>
+            <li>☑️ 网线连接（或安装完后配置 Wi-Fi）</li>
+            <li>☑️ GitHub 仓库的<span class="highlight">管理员权限</span></li>
+            <li>☑️ 闲置电脑一台（不需要24小时运行）</li>
+        </ul>
+
+        <h2>🚀 一键无人值守部署</h2>
+
+        <div class="info-box success">
+            <h3 style="margin-top: 0; color: #2e7d32;">最快方式：3 分钟搞定</h3>
+
+            <h4>第 1 步：获取 GitHub Runner Token</h4>
+            <p>进入你的 GitHub 仓库，依次点击：</p>
+            <div class="code-block">Settings → Actions & general → Runners → New self-hosted runner</div>
+
+            <p>选择操作系统：<span class="highlight">Linux</span> 和 架构：<span class="highlight">x64</span></p>
+
+            <p>页面会显示：</p>
+            <div class="code-block">🔗 仓库地址: https://github.com/YourUsername/YourRepo
+🔑 Token: ghp_xxxxxxxxxxxx (只显示一次，妥善保管！😱)</div>
+
+            <h4>第 2 步：在新机器上执行一键部署脚本</h4>
+
+            <p><strong>前提条件：</strong></p>
+            <ul style="margin-left: 20px;">
+                <li>Rocky Linux 9.7 已安装完成</li>
+                <li>已用 root 账户登录或有 sudo 权限</li>
+                <li>网络连接正常（能访问 GitHub）</li>
+            </ul>
+
+            <div class="code-block">bash -c "$(curl -fsSL https://raw.githubusercontent.com/YourUsername/YourRepo/main/deploy-runner.sh)" \
+  --github-url "https://github.com/YourUsername/YourRepo" \
+  --token "ghp_xxxxxxxxxxxx" \
+  --runner-name "my-runner-1"</div>
+
+            <p>💡 <strong>提示：</strong>脚本会自动处理所有配置，包括禁用 SELinux、创建 runner 用户、安装依赖、启动服务</p>
+
+            <h4>第 3 步：验证部署成功</h4>
+
+            <p>脚本执行完毕后，在 GitHub 网页上刷新 Runners 页面，应该看到：</p>
+            <ul style="margin-left: 20px;">
+                <li>✅ Runner 名称出现在列表中</li>
+                <li>✅ 状态显示 <span style="background: #c8e6c9; padding: 2px 8px; border-radius: 3px;">Idle</span>（空闲）</li>
+                <li>✅ 无错误日志</li>
+            </ul>
+
+            <p><strong>现在 GitHub Actions 会自动分配任务到该 Runner 了！🎉</strong></p>
+        </div>
+
+        <div class="page-break"></div>
+
+        <h2>📋 详细手动部署步骤</h2>
+
+        <div class="info-box warning">
+            <p>⚠️ 如果一键脚本不工作，或你想理解每个步骤，请按以下手动流程操作。</p>
+        </div>
+
+        <h3>第 1 阶段：安装操作系统</h3>
+
+        <div class="step-box">
+            <h4>准备工作</h4>
+            <ol style="margin-left: 20px;">
+                <li>用 balenaEtcher 将 Rocky-9.7-x86_64-dvd.iso 烧写到 USB 驱动器</li>
+                <li>插入 USB 并开机，进入 BIOS（通常是按 F2、F12 或 Del）</li>
+                <li>设置启动顺序：<span class="highlight">UEFI USB → 硬盘</span></li>
+                <li>保存并重启，从 USB 启动</li>
+            </ol>
+
+            <h4 style="margin-top: 25px;">安装时的关键选择</h4>
+            <table style="font-size: 12px;">
+                <tr>
+                    <th style="width: 25%;">选项</th>
+                    <th style="width: 25%;">建议配置</th>
+                    <th style="width: 50%;">说明</th>
+                </tr>
+                <tr>
+                    <td>分区方式</td>
+                    <td>LVM 自动配置</td>
+                    <td>选择自动分区，但要指定根（/）分区大小为 40GB</td>
+                </tr>
+                <tr style="background: #f0f4ff;">
+                    <td>文件系统</td>
+                    <td>ext4（推荐）</td>
+                    <td>XFS 也可以，但 ext4 兼容性更好，性能稳定</td>
+                </tr>
+                <tr style="background-color: #fff9c4;">
+                    <td><strong>SELinux</strong></td>
+                    <td><strong>禁用 ⚠️</strong></td>
+                    <td>安装时选择禁用（Disabled）。否则 Runner 服务会因权限问题无法启动</td>
+                </tr>
+                <tr>
+                    <td>网络</td>
+                    <td>可选</td>
+                    <td>不插网线也行，装完后再配置。建议安装 DHCP 自动获取</td>
+                </tr>
+                <tr>
+                    <td>Root 登录</td>
+                    <td>允许</td>
+                    <td>脚本需要 root 权限初始化。安装后可在 SSH 配置中限制</td>
+                </tr>
+            </table>
+
+            <h4 style="margin-top: 25px;">硬盘空间分配规划</h4>
+            <p>256GB 硬盘基于实际部署经验的分区方案如下：</p>
+            <table style="font-size: 12px; margin: 15px 0;">
+                <tr>
+                    <th style="width: 20%;">分区</th>
+                    <th style="width: 15%;">挂载点</th>
+                    <th style="width: 15%;">容量</th>
+                    <th style="width: 20%;">文件系统</th>
+                    <th style="width: 30%;">用途说明</th>
+                </tr>
+                <tr>
+                    <td>sda1</td>
+                    <td>/boot/efi</td>
+                    <td>500 MB</td>
+                    <td>EFI System</td>
+                    <td>UEFI 启动分区，<span style="color: #d32f2f;"><strong>必须有</strong></span>，否则无法 UEFI 启动</td>
+                </tr>
+                <tr style="background: #f5f5f5;">
+                    <td>sda2</td>
+                    <td>/</td>
+                    <td>40 GB</td>
+                    <td>ext4</td>
+                    <td>系统和 Runner 软件。安装完后可用 ≈ 30GB+</td>
+                </tr>
+                <tr>
+                    <td>sda3</td>
+                    <td>swap</td>
+                    <td>8 GB</td>
+                    <td>swap</td>
+                    <td>虚拟内存，防止编译时内存溢出（3个并发任务时需要）</td>
+                </tr>
+                <tr style="background: #f5f5f5;">
+                    <td>sda4</td>
+                    <td>/work</td>
+                    <td>剩余 ~208 GB</td>
+                    <td>ext4</td>
+                    <td>构建工作目录，OpenWrt/rclone 编译产物全部在此。重点保护区</td>
+                </tr>
+            </table>
+
+            <h4 style="margin-top: 20px;">分区方式选择</h4>
+            <table style="font-size: 12px;">
+                <tr>
+                    <th style="width: 30%;">选项</th>
+                    <th style="width: 25%;">建议</th>
+                    <th style="width: 45%;">说明</th>
+                </tr>
+                <tr style="background-color: #fff9c4;">
+                    <td><strong>标准分区</strong></td>
+                    <td><strong>✅ 选这个</strong></td>
+                    <td>单盘 CI 裸机的工业级稳妥选择。无额外抽象层，故障排查清晰</td>
+                </tr>
+                <tr>
+                    <td>LVM 简单配置</td>
+                    <td>❌ 不要选</td>
+                    <td>你的场景（单盘、分区已规划好）不需要 LVM 的动态扩容。多一层映射会增加排错复杂度</td>
+                </tr>
+                <tr>
+                    <td>LVM 精细配置</td>
+                    <td>❌ 不要选</td>
+                    <td>理由同上，对于初次部署成本过高</td>
+                </tr>
+                <tr style="background: #f0f4ff;">
+                    <td>文件系统</td>
+                    <td><strong>ext4</strong></td>
+                    <td>兼容性好，性能稳定。OpenWrt 和大规模构建场景首选。不选 XFS</td>
+                </tr>
+            </table>
+
+            <h4 style="margin-top: 20px;">根分区 40GB 够吗？</h4>
+            <p><strong>答：完全够，而且绰绰有余。</strong></p>
+            <div class="info-box success">
+                <p style="margin: 0;"><strong>实测数据：</strong></p>
+                <ul style="margin: 15px 0 0 0;">
+                    <li>Rocky Linux 9 最小化安装刚完成：<strong>≈ 1.5–2.0 GB</strong></li>
+                    <li>dnf update + 常用构建依赖后：<strong>≈ 4–6 GB</strong></li>
+                    <li>安装并运行 Runner：<strong>再增加 < 500 MB</strong></li>
+                    <li><strong>最终根分区长期可用：≈ 30 GB 以上（很稳定）</strong></li>
+                </ul>
+                <p style="margin: 10px 0 0 0;"><strong>为什么根分区几乎不涨？</strong>大头（OpenWrt、rclone 构建、toolchain）全部在 /work 分区，不会触及根分区</p>
+            </div>
+
+            <div class="info-box danger" style="margin-top: 20px;">
+                <p style="margin: 0;">❌ <strong>常见坑：</strong>如果选中了 SELinux 并且没有禁用，Runner 会一直启动失败，错误提示 "Permission denied"。建议在安装时直接禁用，不要寄望后期手动关闭</p>
+            </div>
+        </div>
+
+        <h3>第 2 阶段：配置网络</h3>
+
+        <p>如果安装时没有插网线，现在需要手动启用网络连接。无论何时，都要确保网络连接正常，因为 Runner 需要与 GitHub 服务器通信。</p>
+
+        <div class="code-block"># 查看网卡状态（显示所有网卡）
+nmcli device show
+
+# 查看网络连接列表
+nmcli connection show
+
+# 如果网卡没有 IP 地址，手动激活网卡
+nmcli connection add con-name eth0 ifname eth0 type ethernet
+nmcli connection modify eth0 ipv4.method auto
+nmcli connection up eth0
+
+# 验证网络连接（至少要能 ping 通 GitHub 和 8.8.8.8）
+ping 8.8.8.8
+ping github.com
+
+# 检查 DNS 是否配置正确
+cat /etc/resolv.conf  # 应该有 nameserver 行</div>
+
+        <div class="info-box warning">
+            <p style="margin: 0;"><strong>⚠️ 坑点：网卡配置没有开机启动</strong><br/><br/>症状：系统重启后网络连接又断了<br/><br/>解决：设置网卡为自动启动</p>
+        </div>
+
+        <div class="code-block"># 让网络连接开机自启
+sudo nmcli connection modify eth0 connection.autoconnect yes
+sudo nmcli connection up eth0
+
+# 重启验证
+sudo reboot
+ping 8.8.8.8</div>
+
+        <h3>第 3 阶段：禁用 SELinux（如果安装时没禁用）</h3>
+
+        <p>SELinux 是强制访问控制（MAC）安全系统，会对 systemd 启动 Runner 的权限造成限制。即使你在安装时选了禁用，rocky 系统有时还是会在启动后重置，所以最好再验证一遍。</p>
+
+        <div class="code-block"># 查看当前 SELinux 状态
+getenforce  # 显示 Disabled 表示已禁用，Enforcing 表示正在执行
+
+# 立即禁用（无需重启）
+sudo setenforce 0
+
+# 永久禁用（重启生效）  
+sudo sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
+
+# 验证配置文件
+grep ^SELINUX /etc/selinux/config  # 应该显示 SELINUX=disabled
+
+# 重启后再次检查
+sudo reboot
+getenforce</div>
+
+        <div class="info-box warning">
+            <p style="margin: 0;"><strong>⚠️ 坑点：systemd 启动失败因为 SELinux 重新启用</strong><br/><br/>症状：重启后 Runner 服务又无法启动，提示 "Permission denied"<br/><br/>原因：某些系统配置会覆盖 /etc/selinux/config，或者 SELinux 本身有缓存<br/><br/>解决：同时检查并修改 /etc/sysconfig/selinux （如果存在的话）</p>
+        </div>
+
+        <h3>第 4 阶段：创建 Runner 用户</h3>
+
+        <div class="info-box danger">
+            <p style="margin: 0;">⚠️ <strong>重要：</strong>Runner 应该以独立用户身份运行，不要用 root！</p>
+        </div>
+
+        <div class="code-block"># 创建 runner 用户
+sudo useradd -m -s /bin/bash runner
+
+# 添加 sudo 权限（这样可以运行需要 root 的命令）
+sudo usermod -aG wheel runner
+
+# 验证
+sudo -u runner sudo whoami  # 应该输出 root</div>
+
+        <h3>第 5 阶段：下载与安装 Runner</h3>
+
+        <p><strong>为什么使用 /opt 而不是 /home？</strong> /opt 是标准的第三方应用安装目录，与用户数据分离，便于磁盘管理、备份和升级。/home 可能因为用户主目录备份策略而被自动清理。</p>
+
+        <div class="code-block"># 以 root 身份执行（改用 opt 路径）
+sudo mkdir -p /opt/actions-runner
+cd /opt/actions-runner
+
+# 下载 Runner（v2.331.0）
+sudo wget https://github.com/actions/runner/releases/download/v2.331.0/actions-runner-linux-x64-2.331.0.tar.gz
+
+# 解压
+sudo tar xzf actions-runner-linux-x64-2.331.0.tar.gz
+
+# 改变所有权给 runner 用户（这样 runner 用户可以直接读写）
+sudo chown -R runner:runner /opt/actions-runner
+
+# 切换到 runner 用户，安装依赖（这一步需要 root，但在 runner 用户的 sudo 权限下执行）
+sudo bash bin/installdependencies.sh</div>
+
+        <div class="info-box info">
+            <p style="margin: 0;">💡 <strong>提示：</strong>通过 sudo chown 改变所有权，runner 用户就可以直接操作 /opt/actions-runner 目录，无需频繁切换用户。这减少了权限混乱的几率。</p>
+        </div>
+
+        <div class="info-box warning">
+            <p style="margin: 0;"><strong>⚠️ 坑点：tar 解压失败 (gzip: stdin: not in gzip format)</strong><br/><br/>原因：文件下载不完整或被破坏。网络中断导致 .tar.gz 文件尾部缺损是常见原因。<br/><br/>解决：删除文件后重新下载<br/><span style="font-family: monospace;">sudo rm actions-runner-linux-x64*.tar.gz</span></p>
+        </div>
+
+        <h3>第 6 阶段：配置 Runner</h3>
+
+        <div class="code-block"># 切换到 runner 用户
+sudo -u runner -s
+
+# 进入 Runner 目录
+cd /opt/actions-runner
+
+# 运行配置脚本
+./config.sh</div>
+
+        <p><strong>交互式配置过程详解：</strong></p>
+
+        <table style="font-size: 12px; margin: 15px 0;">
+            <tr>
+                <th style="width: 35%;">提示</th>
+                <th style="width: 30%;">示例输入</th>
+                <th style="width: 35%;">说明</th>
+            </tr>
+            <tr>
+                <td>GitHub URL</td>
+                <td><code>https://github.com/<br/>YourUsername/YourRepo</code></td>
+                <td>必须精确，包括 /owner/repo 部分。不要多余或少余字符</td>
+            </tr>
+            <tr style="background: #f5f5f5;">
+                <td>Token</td>
+                <td><code>ghp_xxxxxxxxxxxx</code></td>
+                <td>从 GitHub 页面复制。Token 只显示一次，过期需重新生成。<span style="color: #d32f2f;"><br/>⚠️ 粘贴后不会显示，直接按 Enter</span></td>
+            </tr>
+            <tr>
+                <td>Runner name</td>
+                <td><code>my-runner-1</code></td>
+                <td>自定义名称，GitHub Actions 中会以此名称显示。建议用"机器名-序号"格式，方便多机器部署</td>
+            </tr>
+            <tr style="background: #f5f5f5;">
+                <td>Runner group</td>
+                <td><code>Default</code></td>
+                <td>保持默认即可。Group 是用来组织多个 Runner 的，企业级功能，个人用不到</td>
+            </tr>
+            <tr>
+                <td>Work folder</td>
+                <td><code>_work</code></td>
+                <td>按 Enter 使用默认。这个目录会放置每次 CI/CD 流程的临时文件和构建产物，完整路径为 /opt/actions-runner/_work</td>
+            </tr>
+            <tr style="background: #f5f5f5;">
+                <td>Labels</td>
+                <td><code>Custom,label,here</code><br/>或直接 Enter 跳过</td>
+                <td><span style="color: #d32f2f;">⚠️ 可选项，但很重要</span>。Labels 用来标记 Runner 的特性（如 gpu, docker 等），GitHub Actions 可以按 label 选择运行的 Runner。设置后不需要修改 .yml，只需重启 Runner 即生效。<br/><br/>如果不设置，.yml 中可用 <code>runs-on: self-hosted</code> 来运行所有自托管 Runner</td>
+            </tr>
+        </table>
+
+        <h4 style="margin-top: 20px;">关于 Labels 的进阶用法</h4>
+        <p>如果你的 rclone 仓库 CI/CD 配置了特定的 label，比如：</p>
+        <div class="code-block">runs-on: [self-hosted, linux-x64]</div>
+        <p>那么在配置时就要加上对应的 label：</p>
+        <div class="code-block">? Labels (ex. label-1,label-2) [press Enter to skip]: self-hosted,linux-x64</div>
+
+        <div class="info-box danger" style="margin-top: 20px;">
+            <p style="margin: 0;"><strong>⚠️ 坑点：Runner 已存在同名称的错误</strong><br/><br/>症状：配置时提示 <code>A runner exists with the same name</code><br/><br/>原因：之前部署过相同名称的 Runner，配置信息还在 GitHub 的数据库中<br/><br/>解决：删除旧 Runner 后重新配置</p>
+        </div>
+
+        <h3>第 7 阶段：启动 Runner 服务</h3>
+
+        <div class="info-box danger">
+            <p style="margin: 0;">⚠️ <strong>重要：</strong>如果 SELinux 还没禁用，以下命令会失败！必须先执行第 3 阶段彻底禁用 SELinux 并重启验证。</p>
+        </div>
+
+        <div class="code-block"># 确保回到 root 用户
+exit  # 如果还在 runner 用户的 shell 中
+
+# 进入 Runner 目录
+cd /opt/actions-runner
+
+# 以 runner 用户身份安装为系统服务
+sudo ./svc.sh install
+
+# 启动服务
+sudo ./svc.sh start
+
+# 检查状态（应该显示 active (running)）
+sudo systemctl status actions.runner.*
+
+# 查看服务输出的前几行日志
+sudo journalctl -u actions.runner.* -n 20 --no-pager</div>
+
+        <h4 style="margin-top: 20px;">验证 Runner 是否成功启动</h4>
+        <p>执行以下命令检查关键指标：</p>
+        <div class="code-block"># 1. 检查服务状态（应显示 Active: active (running)）
+sudo systemctl status actions.runner.*
+
+# 2. 检查 Node.js 进程是否在运行
+ps aux | grep node | grep -v grep
+
+# 3. 检查到 GitHub 的连接
+sudo journalctl -u actions.runner.* | grep -i "connected\|listening"</div>
+
+        <div class="page-break"></div>
+
+        <h2>⚠️ 实际部署中遇到的常见问题</h2>
+
+        <div class="info-box warning">
+            <h3 style="margin-top: 0;">❌ 问题 6：Runner 已连接到 GitHub，但任务无法分配</h3>
+            <p><strong>症状</strong></p>
+            <p>GitHub 网页上显示 Runner "Idle"，但提交 Push 或 PR 后，任务没有被分配到这个 Runner</p>
+
+            <p style="margin-top: 15px;"><strong>原因</strong></p>
+            <p>通常是 .yml 工作流配置中的 <code>runs-on</code> 标签与 Runner 的标签不匹配，或者 yml 文件中指定了特定的 runner group</p>
+
+            <p style="margin-top: 15px;"><strong>排查方法</strong></p>
+            <div class="code-block"># 1. 检查 Runner 的标签
+cd /opt/actions-runner
+grep labels .runner
+
+# 2. 查看 .yml 中的 runs-on 配置
+cat .github/workflows/build.yml | grep -A 2 "runs-on:"
+
+# 3. 对比标签是否一致。如果不一致，有两个方案：
+# 方案 A：修改 yml 中的 runs-on 标签
+# 方案 B：重新配置 Runner，添加对应的标签</div>
+        </div>
+
+        <div class="info-box danger">
+            <h3 style="margin-top: 0;">❌ 问题 1：Runner 服务启动失败 - Permission denied</h3>
+            <p><strong>症状</strong></p>
+            <p style="margin: 0; font-family: monospace; background: #fff; padding: 8px; border-radius: 4px;">systemctl status actions.runner.* 显示：Failed to locate executable ... Permission denied</p>
+
+            <p style="margin-top: 15px;"><strong>原因</strong></p>
+            <p>SELinux 正在阻止 systemd 执行 Runner 脚本</p>
+
+            <p style="margin-top: 15px;"><strong>解决方案</strong></p>
+            <div class="code-block">sudo setenforce 0
+sudo sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config</div>
+            <p style="margin: 5px 0 0 0;">然后重新启动服务</p>
+        </div>
+
+        <div class="info-box warning">
+            <h3 style="margin-top: 0;">❌ 问题 2：网络无法连接 - 无法下载 Runner 或依赖</h3>
+            <p><strong>症状</strong></p>
+            <p>ping 不了外网，wget 下载超时</p>
+
+            <p style="margin-top: 10px;"><strong>解决方案</strong></p>
+            <div class="code-block"># 查看网卡
+nmcli device show
+
+# 激活网卡
+nmcli connection up eth0
+systemctl restart NetworkManager
+
+# 检查 DNS
+cat /etc/resolv.conf
+
+# 测试网络
+ping 8.8.8.8</div>
+        </div>
+
+        <div class="info-box warning">
+            <h3 style="margin-top: 0;">❌ 问题 3：无法找到命令 tar、wget 等</h3>
+            <p><strong>症状</strong></p>
+            <p style="margin: 0; font-family: monospace; background: #fff; padding: 8px; border-radius: 4px;">tar: 未找到命令<br/>wget: 未找到命令</p>
+
+            <p style="margin-top: 15px;"><strong>原因</strong></p>
+            <p>Rocky Linux 最小化安装缺少基础工具</p>
+
+            <p style="margin-top: 15px;"><strong>解决方案</strong></p>
+            <div class="code-block">sudo yum update -y
+sudo yum install -y tar wget curl which</div>
+        </div>
+
+        <div class="info-box warning">
+            <h3 style="margin-top: 0;">❌ 问题 4：tar 解压显示 "gzip: not in gzip format"</h3>
+            <p><strong>原因</strong></p>
+            <p>下载的 tar.gz 文件不完整或被破坏</p>
+
+            <p style="margin-top: 10px;"><strong>解决方案</strong></p>
+            <div class="code-block">rm actions-runner-linux-x64*.tar.gz
+wget https://github.com/actions/runner/releases/download/v2.331.0/actions-runner-linux-x64-2.331.0.tar.gz
+tar xzf actions-runner-linux-x64-2.331.0.tar.gz</div>
+        </div>
+
+        <div class="info-box warning">
+            <h3 style="margin-top: 0;">❌ 问题 5：Runner 配置显示 "A runner exists with the same name"</h3>
+            <p><strong>原因</strong></p>
+            <p>旧的 Runner 配置仍存在于 GitHub 的数据库中，或者 .credentials 文件仍在本地</p>
+
+            <p style="margin-top: 15px;"><strong>解决方案</strong></p>
+            <div class="code-block"># 方案 1：先卸载服务，再删除配置（推荐）
+sudo systemctl stop actions.runner.*
+sudo /opt/actions-runner/svc.sh uninstall
+cd /opt/actions-runner
+sudo ./config.sh remove --token ghp_xxxxxxxxxxxx
+
+# 方案 2：如果上面不管用，手动删除本地配置
+sudo rm -f /opt/actions-runner/.credentials
+sudo rm -f /opt/actions-runner/.runner
+sudo rm -f /opt/actions-runner/.credentials_rsaparams
+
+# 然后重新配置
+cd /opt/actions-runner
+sudo -u runner ./config.sh</div>
+
+            <p style="margin-top: 10px;"><strong>在 GitHub 侧的清理</strong></p>
+            <p>进入 Settings → Actions → Runners，找到旧的 Runner，点击删除按钮。然后重新生成 Token。</p>
+        </div>
+
+        <h2>🛠️ 常用管理命令速查</h2>
+
+        <table style="font-size: 13px;">
+            <tr>
+                <th style="width: 40%;">操作</th>
+                <th style="width: 60%;">命令</th>
+            </tr>
+            <tr>
+                <td>查看服务状态</td>
+                <td><code>sudo systemctl status actions.runner.*</code></td>
+            </tr>
+            <tr style="background-color: #f5f5f5;">
+                <td>查看实时日志</td>
+                <td><code>sudo journalctl -u actions.runner.* -f</code></td>
+            </tr>
+            <tr>
+                <td>查看最近 100 行日志</td>
+                <td><code>sudo journalctl -u actions.runner.* -n 100</code></td>
+            </tr>
+            <tr style="background-color: #f5f5f5;">
+                <td>启动服务</td>
+                <td><code>sudo systemctl start actions.runner.*</code></td>
+            </tr>
+            <tr>
+                <td>停止服务</td>
+                <td><code>sudo systemctl stop actions.runner.*</code></td>
+            </tr>
+            <tr style="background-color: #f5f5f5;">
+                <td>重启服务</td>
+                <td><code>sudo systemctl restart actions.runner.*</code></td>
+            </tr>
+            <tr>
+                <td>查看工作目录大小</td>
+                <td><code>du -sh /opt/actions-runner/_work</code></td>
+            </tr>
+            <tr style="background-color: #f5f5f5;">
+                <td>清理工作目录（谨慎！）</td>
+                <td><code>sudo rm -rf /opt/actions-runner/_work/*</code></td>
+            </tr>
+            <tr>
+                <td>清理旧日志（超过30天）</td>
+                <td><code>sudo journalctl --vacuum=30d</code></td>
+            </tr>
+            <tr style="background-color: #f5f5f5;">
+                <td>查看 Runner 进程详情</td>
+                <td><code>ps aux | grep actions-runner</code></td>
+            </tr>
+            <tr>
+                <td>删除 Runner（完整卸载）</td>
+                <td><code>sudo /opt/actions-runner/svc.sh uninstall</code></td>
+            </tr>
+        </table>
+
+        <h2>🔒 安全与最佳实践</h2>
+
+        <h3>GitHub Token 安全</h3>
+        <ul>
+            <li>✅ Token 仅在初始配置时显示一次，之后无法查看</li>
+            <li>✅ 如果 Token 泄露，立即在 GitHub 删除该 Runner 并重新生成</li>
+            <li>✅ 不要将 Token 提交到代码仓库或写到脚本中</li>
+            <li>✅ Runner 机器本身不需要 Token，认证通过密钥交换完成。Token 仅用于首次注册</li>
+            <li>✅ Token 过期后会被 GitHub 自动注销，重新生成需要有管理员权限</li>
+        </ul>
+
+        <h3>SSH 安全加固</h3>
+        <ul>
+            <li>✅ 禁用 root 直接 SSH 登录：在 /etc/ssh/sshd_config 中设置 <code>PermitRootLogin no</code></li>
+            <li>✅ 关闭密码认证，只使用密钥：<code>PasswordAuthentication no</code> 和 <code>PubkeyAuthentication yes</code></li>
+            <li>✅ 限制 SSH 登录用户：<code>AllowUsers runner otheruser</code></li>
+            <li>✅ 修改 SSH 端口（可选）：将默认 22 改为其他端口，减少被扫描的风险</li>
+            <li>✅ 配置完 SSH 后重启：<code>sudo systemctl restart sshd</code></li>
+        </ul>
+
+        <h3>网络安全</h3>
+        <ul>
+            <li>✅ Runner 机器无需暴露到公网（GitHub 会主动连接到你的机器是出站连接）</li>
+            <li>✅ 只允许内网访问 SSH（如果机器在局域网）</li>
+            <li>✅ 防火墙配置：只允许出站 HTTPS（443）到 GitHub API 和 github.com</li>
+            <li>✅ 防火墙配置：允许进站 SSH（端口 22 或自定义）仅从信任的 IP</li>
+        </ul>
+
+        <h3>系统级定期维护</h3>
+        <ul>
+            <li>✅ 每月检查一次磁盘空间：<code>df -h</code> 和 <code>du -sh /opt/actions-runner/_work</code></li>
+            <li>✅ 如果工作目录超过 80GB，清理旧的构建产物：<code>sudo rm -rf /opt/actions-runner/_work/*</code></li>
+            <li>✅ 每周检查 systemd 日志，排查潜在问题：<code>sudo journalctl -u actions.runner.* -x</code></li>
+            <li>✅ 定期更新 Rocky Linux 系统补丁：<code>sudo yum update -y</code></li>
+            <li>✅ 定期检查 GitHub Runner 是否有新版本，及时升级</li>
+            <li>✅ 监控内存占用，如果经常超过 80% 需要考虑增加硬件或限制并发任务数</li>
+            <li>✅ 建立日志备份计划，防止日志文件占满磁盘</li>
+        </ul>
+
+        <div class="page-break"></div>
+
+        <h2>📞 获取帮助</h2>
+
+        <p><strong>官方文档：</strong> <a href="https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners">GitHub Actions 自托管 Runner 文档</a></p>
+
+        <p><strong>检查清单（有问题时排查）：</strong></p>
+        <ol>
+            <li>GitHub Token 是否过期或被吊销？（Settings → Tokens）</li>
+            <li>网络连接是否正常？（ping 8.8.8.8）</li>
+            <li>SELinux 是否关闭？（getenforce）</li>
+            <li>Runner 用户是否有 sudo 权限？（sudo -u runner sudo whoami）</li>
+            <li>磁盘空间是否充足？（df -h）</li>
+            <li>是否有错别字？（检查 GitHub URL 和 Token）</li>
+        </ol>
+
+        <div class="footer">
+            <p>基于实际部署经验 | Runner v2.331.0 | Rocky Linux 9.7</p>
+            <p>最后更新：2026年2月20日</p>
+        </div>
+    </div>
+</body>
+</html>
