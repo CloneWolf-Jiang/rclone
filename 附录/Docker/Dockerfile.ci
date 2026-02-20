@@ -1,0 +1,189 @@
+# GitHub Actions CI 环境 - Ubuntu 22.04
+# 用途：为 rclone 编译构建提供一致的容器化环境
+# 特点：
+#   - 完全隔离的环境，避免裸机环境差异
+#   - 包含 Go 编译环境和所有必要的系统依赖
+#   - 开箱即用，无需复杂的 wrapper 脚本
+#   - 可快速部署，环境一致性有保证
+
+FROM ubuntu:22.04
+
+LABEL maintainer="rclone CI"
+LABEL description="GitHub Actions CI environment for rclone"
+
+# ============================================================================
+# 系统基础配置和软件源
+# ============================================================================
+
+RUN apt-get update && \
+    apt-get install -y ca-certificates && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata && \
+    rm -rf /var/lib/apt/lists/*
+
+# ============================================================================
+# 安装编译工具链（必需）
+# ============================================================================
+
+RUN echo "安装编译工具链..." && \
+    apt-get update && \
+    apt-get install -y \
+        build-essential \
+        gcc \
+        g++ \
+        make \
+        cmake \
+        git \
+        curl \
+        wget \
+        tar \
+        gzip \
+        binutils \
+        pkg-config \
+        && \
+    echo "编译工具链安装完成"
+
+# ============================================================================
+# 安装开发库（必需）
+# ============================================================================
+
+RUN echo "安装开发库..." && \
+    apt-get update && \
+    apt-get install -y \
+        python3-dev \
+        zlib1g-dev \
+        libssl-dev \
+        libncurses5-dev \
+        libreadline-dev \
+        libbz2-dev \
+        libfdt-dev \
+        && \
+    echo "开发库安装完成"
+
+# ============================================================================
+# 安装文件系统支持（必需 - rclone 核心）
+# ============================================================================
+
+RUN echo "安装文件系统支持 (FUSE3, NFS 等)..." && \
+    apt-get update && \
+    apt-get install -y \
+        fuse3 \
+        libfuse3-dev \
+        nfs-common \
+        btrfs-progs \
+        && \
+    echo "文件系统支持安装完成"
+
+# ============================================================================
+# 安装可选工具
+# ============================================================================
+
+RUN echo "安装可选工具..." && \
+    apt-get update && \
+    apt-get install -y \
+        vim \
+        nano \
+        htop \
+        tmux \
+        jq \
+        rsync \
+        file \
+        && \
+    echo "可选工具安装完成"
+
+# ============================================================================
+# 安装 Go 编程环境
+# ============================================================================
+
+# 从官方源安装 Go（自动选择最新版本）
+# 注：Ubuntu 22.04 的官方 Go 版本可能不是最新的，但通常足够用
+RUN echo "安装 Go 编程环境..." && \
+    apt-get update && \
+    apt-get install -y golang-go && \
+    go version && \
+    echo "Go 安装完成"
+
+# 配置 Go 环境变量（提高编译性能）
+ENV GOFLAGS="-v"
+ENV GO111MODULE="on"
+ENV CGO_ENABLED="1"
+
+# 创建 go 工作目录
+RUN mkdir -p /root/go/bin /root/go/src /root/go/pkg && \
+    chmod -R 755 /root/go
+
+# ============================================================================
+# 安装 GitHub Actions Runner 依赖
+# ============================================================================
+
+RUN echo "安装 GitHub Actions Runner 依赖..." && \
+    apt-get update && \
+    apt-get install -y \
+        sudo \
+        ca-certificates \
+        libicu70 \
+        && \
+    echo "GitHub Actions Runner 依赖安装完成"
+
+# ============================================================================
+# 配置 Docker 用户（用于 GitHub Actions Runner）
+# ============================================================================
+
+# 创建 runner 用户（与 GitHub Actions 标准一致）
+RUN useradd -m -s /bin/bash runner && \
+    usermod -aG sudo runner && \
+    echo "runner ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/runner && \
+    chmod 440 /etc/sudoers.d/runner
+
+# ============================================================================
+# FUSE 配置（支持挂载操作）
+# ============================================================================
+
+RUN echo "配置 FUSE..." && \
+    if [ -f /etc/fuse.conf ]; then \
+        echo "user_allow_other" >> /etc/fuse.conf; \
+    fi
+
+# ============================================================================
+# 环境验证
+# ============================================================================
+
+RUN echo "验证 CI 环境..." && \
+    gcc --version && \
+    g++ --version && \
+    make --version && \
+    git --version && \
+    go version && \
+    echo "✅ CI 环境验证通过"
+
+# ============================================================================
+# 清理和优化
+# ============================================================================
+
+RUN echo "清理包管理器缓存..." && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    echo "清理完成"
+
+# ============================================================================
+# 工作环境设置
+# ============================================================================
+
+WORKDIR /workspace
+RUN chown -R runner:runner /workspace
+
+# 设置默认用户为 runner（模拟 GitHub Actions 环境）
+USER runner
+
+# ============================================================================
+# 健康检查
+# ============================================================================
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD go version && gcc --version && echo "✓ CI environment verified"
+
+# ============================================================================
+# 入口点：运行 bash（可被 GitHub Actions 覆盖）
+# ============================================================================
+
+ENTRYPOINT ["/bin/bash"]
+CMD ["-c", "echo '✓ CI environment ready' && bash"]

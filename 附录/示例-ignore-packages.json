@@ -1,0 +1,15 @@
+{
+  "_version": "3.2",
+  "_comment": "忽略列表 - Rocky 中不可用或不需要的包",
+  "_usage": "在 ignore 数组中添加需要忽略的包名",
+  "_maintenance": "这些包在安装时会被跳过，不会被传递给 dnf",
+  "_examples": {
+    "编辑方法": "在 ignore 数组中添加包名，以逗号分隔",
+    "验证方法": "运行: jq . ignore-packages.json",
+    "查看列表": "运行: jq '.ignore[]' ignore-packages.json"
+  },
+  "ignore": [
+    "git-annex",
+    "git-annex-remote-rclone"
+  ]
+}

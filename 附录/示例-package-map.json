@@ -1,0 +1,16 @@
+{
+  "_version": "3.2",
+  "_comment": "Ubuntu → Rocky Linux 包名映射表",
+  "_usage": "格式: \"ubuntu包名\": \"rocky包名\" | 可以手动编辑此文件添加新映射",
+  "_maintenance": "脚本执行时会智能合并，保留已有配置，只添加新增映射项",
+  "_examples": {
+    "编辑方法": "直接在主体中添加新行，格式: \"源包\": \"目标包\"",
+    "验证方法": "运行: jq . package-map.json",
+    "查看映射": "运行: jq 'to_entries[] | select(.key | startswith(\"_\") | not)' package-map.json"
+  },
+  "libfuse-dev": "fuse3-devel",
+  "nfs-common": "nfs-utils",
+  "gcc": "gcc",
+  "g++": "gcc-c++",
+  "pkg-config": "pkgconf-pkg-config"
+}

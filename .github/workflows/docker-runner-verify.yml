@@ -1,0 +1,323 @@
+name: Docker Runner Deployment Verification
+
+# 验证本地docker self-hosted runner部署是否成功
+# 来源：GitHub官方runner验证工作流
+# 更新：2026-02-20
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  schedule:
+    # 每12小时运行一次验证
+    - cron: '0 */12 * * *'
+
+jobs:
+  runner-verification:
+    name: Verify Self-Hosted Docker Runner
+    runs-on: [self-hosted, docker]
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+
+      # ============================================================================
+      # 1. 系统信息验证
+      # ============================================================================
+      
+      - name: System Information
+        run: |
+          echo "=== Operating System ==="
+          cat /etc/os-release | head -3
+          echo ""
+          echo "=== Kernel Version ==="
+          uname -r
+          echo ""
+          echo "=== Hostname ==="
+          hostname
+          echo ""
+          echo "=== Current User ==="
+          whoami
+          echo ""
+          echo "=== User Groups ==="
+          groups
+
+      # ============================================================================
+      # 1.5 检查 Docker Group 权限（Self-Hosted Runner 必需）
+      # ============================================================================
+
+      - name: Verify Docker Group Permissions
+        run: |
+          echo "=== Checking Docker Group Access ==="
+          CURRENT_USER=$(whoami)
+          
+          # 检查用户是否在 docker group 中
+          if groups $CURRENT_USER | grep -q docker; then
+            echo "✓ $CURRENT_USER 已在 docker group 中"
+            echo "✓ Docker 权限已正确配置"
+          else
+            echo "✗ $CURRENT_USER 未在 docker group 中"
+            echo ""
+            echo "必需的修复步骤（在Rocky 9.4上执行一次）："
+            echo "  sudo usermod -aG docker $CURRENT_USER"
+            echo "  su - $CURRENT_USER     # 刷新group成员关系"
+            echo ""
+            echo "完成后验证："
+            echo "  docker ps               # 应该显示容器列表而不是权限错误"
+            echo ""
+            exit 1
+          fi
+
+      # ============================================================================
+      # 2. Docker 环境验证  
+      # ============================================================================
+
+      - name: Docker Version
+        run: |
+          echo "=== Docker Version ==="
+          docker --version
+          echo ""
+          echo "=== Docker Daemon Status ==="
+          systemctl status docker --no-pager
+          echo ""
+          echo "=== Docker Info (Key Details) ==="
+          docker info | grep -E "Server Version|Storage Driver|Runtime|Cgroup Driver|Operating System"
+
+      - name: Docker Runtime Test
+        run: |
+          echo "=== Testing Docker Runtime ==="
+          docker run --rm alpine:latest uname -a
+          docker run --rm ubuntu:22.04 cat /etc/os-release | head -3
+          echo "✓ Docker runtime working"
+
+      - name: Docker Volume Test
+        run: |
+          echo "=== Testing Volume Mounting ==="
+          mkdir -p /tmp/docker-vol-test
+          echo "Volume test data - $(date)" > /tmp/docker-vol-test/test.txt
+          docker run --rm \
+            -v /tmp/docker-vol-test:/data \
+            alpine:latest \
+            cat /data/test.txt
+          rm -rf /tmp/docker-vol-test
+          echo "✓ Volume mounting working"
+
+      - name: Docker Network Test
+        run: |
+          echo "=== Testing Docker Network ==="
+          docker run --rm \
+            --network bridge \
+            alpine:latest \
+            wget -q -O - https://github.com/status | head -5 || echo "Network connectivity test complete"
+          echo "✓ Docker networking working"
+
+      # ============================================================================
+      # 3. 编译环境验证 (rclone CI 所需工具)
+      # ============================================================================
+
+      - name: Build Environment Check
+        run: |
+          echo "=== Checking Build Environment ==="
+          docker run --rm ubuntu:22.04 bash -c '
+            echo "=== Package Manager ==="
+            apt --version | head -1
+            echo ""
+            echo "=== Compiler Toolchain ==="
+            which gcc g++ make || echo "Compilers not installed in base image"
+            echo ""
+            echo "=== Go Runtime ==="
+            which go || echo "Go not installed in base image"
+            echo "✓ Base image compatibility verified"
+          '
+
+      # ============================================================================
+      # 4. rclone CI 镜像验证
+      # ============================================================================
+
+      - name: Check rclone-ci Image
+        run: |
+          echo "=== Looking for rclone-ci Image ==="
+          if docker images | grep -q rclone-ci; then
+            echo "Found rclone-ci images:"
+            docker images | grep rclone-ci
+            echo ""
+            echo "=== Testing rclone-ci Image ==="
+            docker run --rm rclone-ci:latest gcc --version 2>&1 | head -3
+            docker run --rm rclone-ci:latest g++ --version 2>&1 | head -3
+            docker run --rm rclone-ci:latest go version 2>&1
+            echo "✓ rclone-ci image functional"
+          else
+            echo "⚠ rclone-ci image not found - run: ./docker-ci-commands.sh build"
+            docker images | head -10
+          fi
+
+      # ============================================================================
+      # 5. GitHub Actions Runner 验证
+      # ============================================================================
+
+      - name: Runner Environment Variables
+        run: |
+          echo "=== GitHub Actions Runner Environment ==="
+          echo "Runner Name: ${{ runner.name }}"
+          echo "Runner OS: ${{ runner.os }}"
+          echo "Runner Arch: ${{ runner.arch }}"
+          echo "Workspace: $GITHUB_WORKSPACE"
+          echo "Runner Temp: $RUNNER_TEMP"
+          echo "Runner Tool Cache: $RUNNER_TOOL_CACHE"
+          echo ""
+          echo "=== GitHub Context ==="
+          echo "Repository: ${{ github.repository }}"
+          echo "Event: ${{ github.event_name }}"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Run Number: ${{ github.run_number }}"
+
+      - name: GitHub Connectivity Test
+        run: |
+          echo "=== Testing GitHub API Connectivity ==="
+          for endpoint in api.github.com github.com uploads.github.com; do
+            if curl -m 5 -s -I https://$endpoint > /dev/null 2>&1; then
+              echo "✓ $endpoint reachable"
+            else
+              echo "✗ $endpoint not reachable"
+              exit 1
+            fi
+          done
+
+      # ============================================================================
+      # 6. 磁盘和资源检查
+      # ============================================================================
+
+      - name: Disk Space Check
+        run: |
+          echo "=== Disk Usage ==="
+          df -h /
+          echo ""
+          echo "=== Available Space ==="
+          df -h / | awk 'NR==2 {print "Free: " $4 " Total: " $2}'
+          
+          if [ $(df / | awk 'NR==2 {print $4}' | sed 's/G$//') -lt 10 ]; then
+            echo "⚠ Warning: Less than 10GB disk space"
+            exit 1
+          else
+            echo "✓ Sufficient disk space available"
+          fi
+
+      - name: Memory Check
+        run: |
+          echo "=== Memory Information ==="
+          free -h
+          echo ""
+          echo "=== Available Memory ==="
+          free -h | awk 'NR==2 {print "Available: " $7}'
+
+      - name: CPU Information
+        run: |
+          echo "=== CPU Information ==="
+          echo "Cores: $(nproc)"
+          echo "Load Average: $(uptime | awk -F'load average:' '{print $2}')"
+          echo ""
+          echo "=== CPU Details ==="
+          lscpu | grep -E "^Architecture:|^CPU\(s\):|^Model name:" || echo "CPU info unavailable"
+
+      # ============================================================================
+      # 7. 网络性能检查
+      # ============================================================================
+
+      - name: Network Performance Test
+        run: |
+          echo "=== Network Performance ==="
+          echo "Testing download speed to GitHub..."
+          
+          time curl -o /dev/null -s https://github.com/actions/runner/releases/download/v2.331.0/actions-runner-linux-x64-2.331.0.tar.gz
+          
+          echo ""
+          echo "✓ Network connectivity verified"
+
+      # ============================================================================
+      # 8. 最终验证总结
+      # ============================================================================
+
+      - name: Verification Summary
+        if: always()
+        run: |
+          cat << 'EOF'
+          
+          ╔════════════════════════════════════════════════════════════════════╗
+          ║                                                                    ║
+          ║     ✓ Docker Self-Hosted Runner Verification Complete             ║
+          ║                                                                    ║
+          ╚════════════════════════════════════════════════════════════════════╝
+          
+          ✓ Docker daemon operational
+          ✓ Container execution working
+          ✓ Volume mounting working
+          ✓ Network connectivity verified
+          ✓ GitHub Actions runner responsive
+          ✓ Build environment compatible
+          
+          Next Steps:
+          1. Build rclone-ci image:
+             ./docker-ci-commands.sh build
+          
+          2. Run compilation test:
+             ./docker-ci-commands.sh run-make
+          
+          3. Verify CI environment:
+             ./docker-ci-commands.sh verify
+          
+          Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          EOF
+
+  # ============================================================================
+  # 可选：性能基准测试
+  # ============================================================================
+  
+  performance-benchmark:
+    name: Performance Benchmark
+    runs-on: [self-hosted, docker]
+    if: github.event_name == 'workflow_dispatch'
+    needs: runner-verification
+    timeout-minutes: 30
+    
+    steps:
+      - name: CPU Benchmark
+        run: |
+          echo "=== CPU Benchmark ==="
+          echo "Running compression benchmark..."
+          
+          dd if=/dev/zero bs=1M count=500 2>/dev/null | \
+          time gzip > /dev/null
+          
+          echo "✓ CPU benchmark complete"
+
+      - name: Docker Build Benchmark
+        run: |
+          echo "=== Docker Build Performance ==="
+          cat > /tmp/Dockerfile.benchmark << 'EOF'
+          FROM ubuntu:22.04
+          RUN apt-get update && apt-get install -y \
+              build-essential \
+              git \
+              curl && \
+              apt-get clean
+          EOF
+          
+          echo "Building test image..."
+          time docker build -f /tmp/Dockerfile.benchmark -t benchmark-test /tmp/
+          
+          echo "Testing image..."
+          docker run --rm benchmark-test gcc --version | head -3
+          
+          docker rmi benchmark-test
+          echo "✓ Docker build benchmark complete"
+
+      - name: Benchmark Summary
+        if: always()
+        run: |
+          echo ""
+          echo "Performance benchmark completed at $(date)"

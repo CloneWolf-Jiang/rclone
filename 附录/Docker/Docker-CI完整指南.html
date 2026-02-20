@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker CI/CD 方案 - 完整指南</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', sans-serif; line-height: 1.6; color: #333; background-color: #f8f9fa; padding: 40px 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 60px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+        h1 { font-size: 36px; color: #1a1a1a; margin-bottom: 10px; font-weight: 700; }
+        .subtitle { font-size: 14px; color: #666; margin-bottom: 40px; padding: 12px; background: #f5f5f5; border-left: 4px solid #2196F3; border-radius: 4px; }
+        h2 { font-size: 24px; color: #1a1a1a; margin-top: 50px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #2196F3; }
+        h3 { font-size: 18px; color: #2c3e50; margin-top: 25px; margin-bottom: 15px; font-weight: 600; }
+        h4 { font-size: 15px; color: #34495e; margin-top: 15px; margin-bottom: 10px; font-weight: 600; }
+        p { margin-bottom: 15px; font-size: 14px; line-height: 1.8; }
+        .info-box { padding: 20px; margin: 20px 0; border-radius: 6px; border-left: 5px solid; }
+        .info-box.success { background-color: #e8f5e9; border-left-color: #4CAF50; }
+        .info-box.info { background-color: #e3f2fd; border-left-color: #2196F3; }
+        .info-box.warning { background-color: #fff3e0; border-left-color: #ff9800; }
+        .info-box.danger { background-color: #ffebee; border-left-color: #f44336; }
+        code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 13px; }
+        .code-block { background-color: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 6px; overflow-x: auto; margin: 15px 0; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.8; border: 1px solid #333; white-space: pre-wrap; word-wrap: break-word; display: block; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+        table th { background-color: #f5f5f5; padding: 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #ddd; }
+        table td { padding: 12px; border-bottom: 1px solid #e0e0e0; }
+        table tr:hover { background-color: #f9f9f9; }
+        ul, ol { margin-left: 20px; margin-bottom: 15px; }
+        li { margin-bottom: 8px; font-size: 14px; }
+        .toc { background: #f0f5ff; padding: 20px; border-radius: 6px; margin: 30px 0; border-left: 4px solid #2196F3; }
+        .toc h3 { margin-top: 0; color: #2196F3; }
+        .toc ul { list-style: none; margin-left: 0; }
+        .toc a { color: #2196F3; text-decoration: none; font-size: 14px; }
+        a { color: #2196F3; text-decoration: none; }
+        .footer { text-align: right; font-size: 12px; color: #999; margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; }
+        @media print { body { background: white; padding: 0; } .container { box-shadow: none; } }
+    </style>
+</head>
+<body>
+<div class="container">
+<h1>🐳 Docker CI/CD 方案 - 完整指南</h1>
+<div class="subtitle">整合所有 Docker 文档 | 日期: 2026-02-20 | 版本: v1.0 | 状态: ✅ 正式版本</div>
+
+<div class="toc">
+<h3>📑 快速导航</h3>
+<ul>
+<li><a href="#section1">1. 文件使用说明</a></li>
+<li><a href="#section2">2. 验证部署指南</a></li>
+<li><a href="#section3">3. 快速参考</a></li>
+<li><a href="#section4">4. 完整部署指南</a></li>
+<li><a href="#section5">5. 迁移指南</a></li>
+<li><a href="#section6">6. 资源总览</a></li>
+</ul>
+</div>
+
+<div id="section1">
+<h2>1️⃣ Docker CI 方案 - 文件使用说明</h2>
+<p><strong>整理日期</strong>: 2026-02-20</p>
+
+<h3>📂 文件位置</h3>
+<p>所有 Docker 相关文件已整理到 <code>附录/Docker</code> 目录下:</p>
+<div class="code-block">附录/Docker/
+├── Dockerfile.ci                # CI 专用 Docker 镜像定义
+├── docker-compose.yml           # 本地开发 docker-compose 配置
+├── docker-ci-commands.sh        # 便捷工具脚本
+├── docker-build.yml             # GitHub Actions 工作流配置
+├── Docker方案部署指南.md         # 完整部署文档
+├── Docker快速参考.md            # 速查表
+├── 迁移指南-从裸机到Docker.md   # 迁移步骤
+└── Docker_CI资源总览.md         # 资源导航</div>
+
+<h3>🔧 使用方法</h3>
+
+<h4>方法 1: 创建符号链接（推荐）</h4>
+<div class="code-block"># Windows PowerShell (管理员权限)
+cd H:\rClone\rclone
+New-Item -ItemType SymbolicLink -Path "Dockerfile.ci" -Target "附录\Docker\Dockerfile.ci" -Force
+
+# Linux/macOS (Bash)
+cd /path/to/rclone
+ln -sf 附录/Docker/Dockerfile.ci Dockerfile.ci
+ln -sf 附录/Docker/docker-compose.yml docker-compose.yml</div>
+
+<p><strong>优势</strong>: 保持项目整洁（单点访问），Docker 命令可直接使用，文件集中管理</p>
+
+<h4>方法 2: 直接复制文件到根目录</h4>
+<div class="code-block">cp 附录/Docker/Dockerfile.ci ./
+cp 附录/Docker/docker-compose.yml ./
+cp 附录/Docker/docker-ci-commands.sh ./</div>
+
+<h4>方法 3: 使用完整路径</h4>
+<div class="code-block">docker build -f 附录/Docker/Dockerfile.ci -t rclone-ci:latest .</div>
+
+<h3>📋 快速开始</h3>
+
+<div class="info-box info">
+<strong>Step 1: 设置文件</strong><br>
+推荐使用方法 1（符号链接）
+</div>
+
+<div class="info-box info">
+<strong>Step 2: 构建镜像</strong><br>
+docker build -f Dockerfile.ci -t rclone-ci:latest .
+</div>
+
+<div class="info-box success">
+<strong>Step 3: 验证环境</strong><br>
+docker run --rm rclone-ci:latest verify-ci-env
+</div>
+
+<div class="info-box info">
+<strong>Step 4: 开始使用</strong><br>
+docker-compose up -d<br>
+docker-compose exec runner bash<br>
+docker-compose down
+</div>
+
+<h3>📚 文档导航</h3>
+<table>
+<tr><th>文件</th><th>说明</th></tr>
+<tr><td>Docker方案部署指南.md</td><td>📖 详细部署、故障排查、最佳实践</td></tr>
+<tr><td>Docker快速参考.md</td><td>⚡ 速查表、常用命令、代码片段</td></tr>
+<tr><td>迁移指南-从裸机到Docker.md</td><td>🔄 从旧方案迁移的分步指南</td></tr>
+<tr><td>Docker_CI资源总览.md</td><td>📌 资源索引和导航</td></tr>
+</table>
+</div>
+
+<div id="section2">
+<h2>2️⃣ Docker 环境验证部署指南</h2>
+
+<h3>📂 项目文件清单</h3>
+
+<p><strong>说明</strong>：本部分仅列出来自项目仓库的配置、工作流和文档文件，不包括 .sh 脚本和 .ci Dockerfile 的说明。</p>
+
+<table>
+<tr><th>文件名</th><th>位置</th><th>用途</th><th>来源</th></tr>
+<tr><td><code>目录结构安排说明.md</code></td><td>附录/Docker/</td><td>Rocky 9.4 主机目录结构和部署清单</td><td>项目仓库</td></tr>
+<tr><td><code>Docker-Runner-部署验证指南.md</code></td><td>附录/Docker/</td><td>本地验证方案（3种验证方法）</td><td>项目仓库</td></tr>
+<tr><td><code>docker-runner-verify.yml</code></td><td>.github/workflows/</td><td>GitHub Actions 自动验证工作流</td><td>项目仓库</td></tr>
+</table>
+
+<h3>🔑 关键改进</h3>
+
+<div class="info-box success">
+<strong>✅ 集成验证框架（v2.0 新特性）</strong><br><br>
+<strong>问题背景</strong>：早期部署时需要分别运行验证脚本和构建脚本<br><br>
+<strong>解决方案</strong>：将 <code>verify-docker-runner.sh</code> 的完整验证逻辑集成到 <code>docker-ci-commands.sh build</code> 命令<br><br>
+<strong>效果</strong>：一条命令完成验证 + 构建 + 验证，无需分步操作
+</div>
+
+<p><strong>改进前：</strong>需要多步操作</p>
+<div class="code-block">bash verify-docker-runner.sh        # 单独运行验证
+docker build -f Dockerfile.ci ...   # 再构建镜像
+docker run ... 验证工具             # 最后手动验证</div>
+
+<p><strong>改进后：</strong>一条命令搞定</p>
+<div class="code-block">./docker-ci-commands.sh build  # 自动完成所有工作</div>
+
+<h3>📖 各文件说明</h3>
+
+<h4>1️⃣ 目录结构安排说明.md</h4>
+<p><strong>主要内容</strong>：</p>
+<ul>
+<li>Rocky 9.4 主机标准目录结构定义</li>
+<li>5 个关键文件的复制清单</li>
+<li>手工部署步骤（含 Docker 自动安装选项）</li>
+<li>使用 docker-ci-commands.sh 的快速验证流程</li>
+<li>其他命令参考表</li>
+</ul>
+
+<p><strong>何时查看</strong>：初次部署到 Rocky 主机时，按此文档的步骤执行</p>
+
+<p><strong>关键步骤</strong>：</p>
+<div class="code-block"># 1. 创建目录结构
+mkdir -p ~/rclone/Docker ~/.github/workflows
+
+# 2. 复制文件到指定位置
+cp Dockerfile.ci ~/rclone/
+cp docker-ci-commands.sh ~/rclone/
+chmod +x ~/rclone/docker-ci-commands.sh
+
+# 3. 运行构建和验证（一条命令）
+cd ~/rclone
+./docker-ci-commands.sh build</div>
+
+<div class="info-box info">
+<strong>💡 提示</strong>：如果是首次部署且 Docker 未安装，脚本会自动检测，你可以运行：<br>
+<code>./docker-ci-commands.sh setup</code> 来安装 Docker
+</div>
+
+<h4>2️⃣ Docker-Runner-部署验证指南.md</h4>
+
+<p><strong>主要内容</strong>：</p>
+<ul>
+<li><strong>方法 1：本地验证脚本</strong>（verify-docker-runner.sh）</li>
+<li><strong>方法 2：CLI 集成验证</strong>（docker-ci-commands.sh build）</li>
+<li><strong>方法 3：GitHub Actions 工作流</strong>（docker-runner-verify.yml）</li>
+</ul>
+
+<p><strong>3 种验证方法对比</strong>：</p>
+<table>
+<tr><th>方法</th><th>触发方式</th><th>执行位置</th><th>耗时</th><th>推荐场景</th></tr>
+<tr><td><strong>本地脚本</strong></td><td>手动执行</td><td>Rocky 主机</td><td>5 分钟</td><td>初始诊断、故障排查</td></tr>
+<tr><td><strong>CLI 集成</strong> ⭐</td><td>手动执行</td><td>Rocky 主机</td><td>10-15 分钟</td><td>日常部署、验证构建</td></tr>
+<tr><td><strong>GitHub Actions</strong></td><td>自动/手动触发</td><td>GitHub 云端</td><td>15-20 分钟</td><td>CI/CD 流程、自动验证</td></tr>
+</table>
+
+<p><strong>推荐使用</strong>：<code>docker-ci-commands.sh build</code>（方法 2 - 标记 ⭐）</p>
+
+<h4>3️⃣ docker-runner-verify.yml（GitHub Actions 工作流）</h4>
+
+<p><strong>主要内容</strong>：</p>
+<ul>
+<li>GitHub Actions 中的自动验证工作流</li>
+<li>包含 7 步完整验证过程</li>
+<li>生成结构化的验证报告</li>
+<li>支持手动触发和自动触发</li>
+</ul>
+
+<p><strong>何时使用</strong>：</p>
+<ul>
+<li>当代码推送到 GitHub 时自动运行</li>
+<li>手动从 GitHub Web UI 触发</li>
+<li>用于远程 CI/CD 验证环节</li>
+</ul>
+
+<p><strong>工作流触发方式</strong>：</p>
+<div class="code-block"># 方式 1：代码推送自动触发
+git push origin main
+
+# 方式 2：手动触发（GitHub Web）
+Actions → docker-runner-verify → Run workflow
+
+# 方式 3：定时触发（可选配置）
+# 每周一凌晨 2 点自动验证
+schedule:
+  - cron: '0 2 * * 1'</div>
+
+<h3>🎯 三层验证体系</h3>
+
+<p><strong>v2.0 采用分层验证设计</strong>：</p>
+
+<table>
+<tr><th>验证层</th><th>脚本/工作流</th><th>命令</th><th>验证内容</th><th>频率</th></tr>
+<tr><td><strong>第 1 层：本地诊断</strong></td><td>verify-docker-runner.sh</td><td><code>bash Docker/verify-docker-runner.sh</code></td><td>系统、Docker、网络、资源</td><td>故障排查</td></tr>
+<tr><td><strong>第 2 层：构建验证</strong> ⭐</td><td>docker-ci-commands.sh</td><td><code>./docker-ci-commands.sh build</code></td><td>验证 + 镜像构建 + 工具验证</td><td>每次部署</td></tr>
+<tr><td><strong>第 3 层：CI 验证</strong></td><td>docker-runner-verify.yml</td><td>GitHub Web 触发</td><td>远程自动验证、生成报告</td><td>代码提交</td></tr>
+</table>
+
+<h3>📋 如何使用 docker-ci-commands.sh 命令</h3>
+
+<p><strong>命令语法</strong>：</p>
+<div class="code-block">cd ~/rclone
+./docker-ci-commands.sh <command> [options]</div>
+
+<h4>核心命令</h4>
+
+<table>
+<tr><th>命令</th><th>作用</th><th>耗时</th><th>说明</th></tr>
+<tr><td><code>build</code></td><td>❌ 构建 + 验证</td><td>10-15 分钟</td><td>完整的构建流程，包含 7 步验证</td></tr>
+<tr><td><code>build --no-cache</code></td><td>❌ 完整重建</td><td>20-30 分钟</td><td>不使用缓存，全新构建</td></tr>
+<tr><td><code>verify</code></td><td>✅ 验证环境</td><td>&lt; 1 分钟</td><td>快速检查 CI 编译环境</td></tr>
+<tr><td><code>run-make</code></td><td>🔨 编译 rclone</td><td>5-10 分钟</td><td>在容器中运行 make，编译源码</td></tr>
+<tr><td><code>run</code></td><td>🖥️ 交互式 Shell</td><td>即时</td><td>进入容器进行交互式操作</td></tr>
+</table>
+
+<h4>常见使用场景</h4>
+
+<p><strong>场景 1：首次部署（完整验证）</strong></p>
+<div class="code-block">cd ~/rclone
+./docker-ci-commands.sh build  # 一条命令，完成系统检查 + 构建
+
+# 输出示例：
+# ℹ️  第 1 步：系统环境检查
+#   ✓ 操作系统: Linux
+#   ✓ 内核版本: 5.14.0
+#   ✓ 当前用户: runner
+# ℹ️  第 2 步：Docker 环境验证
+#   ✓ Docker version 29.0.0
+#   ✓ Docker 服务正在运行
+# ... 更多验证步骤 ...
+# ✅ rclone-ci 镜像构建完成！</div>
+
+<p><strong>场景 2：编译源代码</strong></p>
+<div class="code-block">cd ~/rclone
+./docker-ci-commands.sh run-make  # 在容器中编译 rclone
+
+# 输出示例：
+# ...
+# make[1]: Leaving directory '/workspace'
+# Build complete!
+# Binary: /workspace/rclone</div>
+
+<p><strong>场景 3：快速环境检查（无构建）</strong></p>
+<div class="code-block">cd ~/rclone
+./docker-ci-commands.sh verify  # 仅检查，不构建
+
+# 输出示例：
+# ✅ rclone CI 环境检查通过
+# - gcc 版本: gcc (GCC) 9.5.0
+# - go 版本: go version go1.21.0
+# - make 版本: GNU Make 4.3
+# ...</div>
+
+<p><strong>场景 4：进入容器调试</strong></p>
+<div class="code-block">cd ~/rclone
+./docker-ci-commands.sh run  # 进入 bash
+
+# 现在在容器内，可以自由操作：
+runner@rclone:~$ gcc --version
+gcc (Debian 10.2.1-6) 10.2.1 20210110
+runner@rclone:~$ echo $GOPATH
+/workspace/go
+runner@rclone:~$ make   # 手动编译
+...</div>
+
+<h4>高级命令参考</h4>
+
+<table>
+<tr><th>命令</th><th>说明</th></tr>
+<tr><td><code>setup</code></td><td>安装 Docker Engine（仅首次需要）</td></tr>
+<tr><td><code>setup-mirrors</code></td><td>配置加速镜像源（加快镜像拉取速度）</td></tr>
+<tr><td><code>images</code></td><td>查看本地 Docker 镜像列表</td></tr>
+<tr><td><code>inspect</code></td><td>查看 rclone-ci 镜像详细信息</td></tr>
+<tr><td><code>logs</code></td><td>查看容器运行日志</td></tr>
+<tr><td><code>stats</code></td><td>实时监控容器资源使用</td></tr>
+<tr><td><code>rm</code></td><td>删除 rclone-ci 镜像</td></tr>
+<tr><td><code>cleanup</code></td><td>清理所有 Docker 匿名数据卷和容器</td></tr>
+</table>
+
+<h3>🚀 快速检查清单</h3>
+
+<p><strong>部署前</strong>：</p>
+<div class="info-box info">
+☐ Rocky 9.4 系统已准备<br>
+☐ 网络可访问 GitHub<br>
+☐ 目录结构已按 目录结构安排说明.md 创建<br>
+☐ 5 个核心文件已复制：Dockerfile.ci、docker-ci-commands.sh、verify-docker-runner.sh、.md 文件、.yml 工作流
+</div>
+
+<p><strong>部署中</strong>：</p>
+<div class="code-block">cd ~/rclone
+./docker-ci-commands.sh build  # 运行一次，自动完成所有工作</div>
+
+<p><strong>部署后</strong>：</p>
+<div class="info-box success">
+✅ docker-ci-commands.sh build 成功完成<br>
+✅ 本地验证脚本通过所有检查<br>
+✅ GitHub Actions 工作流配置就绪（可选）
+</div>
+
+</div>
+
+<div id="section3">
+<h2>3️⃣ Docker CI 方案 - 快速参考指南</h2>
+
+<h3>🚀 快速开始（3步）</h3>
+<div class="code-block"># 1. 构建镜像（首次5分钟）
+docker build -f Dockerfile.ci -t rclone-ci:latest .
+
+# 2. 验证环境
+docker run --rm rclone-ci:latest verify-ci-env
+
+# 3. 运行构建
+docker run --rm -v "$(pwd)":/workspace -w /workspace rclone-ci:latest make</div>
+
+<h3>📦 常用命令速查</h3>
+
+<h4>Docker 镜像操作</h4>
+<table>
+<tr><th>命令</th><th>说明</th></tr>
+<tr><td>docker build -f Dockerfile.ci -t rclone-ci:latest .</td><td>构建镜像</td></tr>
+<tr><td>docker images | grep rclone-ci</td><td>查看镜像</td></tr>
+<tr><td>docker image rm rclone-ci:latest</td><td>删除镜像</td></tr>
+<tr><td>docker image inspect rclone-ci:latest</td><td>查看镜像详情</td></tr>
+<tr><td>docker history rclone-ci:latest</td><td>查看构建层</td></tr>
+</table>
+
+<h4>Dockerfile.ci 构建步骤详解（共 19 步）</h4>
+<p><strong>说明</strong>: 以下是镜像构建过程中的完整步骤分解。所有生成的文件均位于<code>Docker 镜像文件系统</code>内部，不会影响宿主机。</p>
+
+<table>
+<tr>
+<th>#</th>
+<th>步骤</th>
+<th>操作描述</th>
+<th>文件位置（容器内）</th>
+<th>缓存状态</th>
+</tr>
+<tr>
+<td>1</td>
+<td>FROM ubuntu:22.04</td>
+<td>拉取基础镜像</td>
+<td><code>/</code> (所有文件)</td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>2</td>
+<td>apt ca-certificates</td>
+<td>安装证书 + 时区数据</td>
+<td><code>/usr/share/ca-certificates/</code></td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>3</td>
+<td>编译工具链</td>
+<td>gcc, g++, make, cmake, git 等</td>
+<td><code>/usr/bin/</code>, <code>/usr/lib/</code></td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>4</td>
+<td>开发库</td>
+<td>python3-dev, libssl-dev 等</td>
+<td><code>/usr/include/</code>, <code>/usr/lib/</code></td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>5</td>
+<td>文件系统支持</td>
+<td>fuse3, nfs-common, btrfs-progs</td>
+<td><code>/usr/lib/</code>, <code>/usr/bin/</code></td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>6</td>
+<td>可选工具</td>
+<td>vim, nano, htop, jq 等</td>
+<td><code>/usr/bin/</code>, <code>/usr/share/</code></td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Go 编程环境</td>
+<td>go 二进制 + 标准库</td>
+<td><code>/usr/lib/go-*</code>, <code>/usr/bin/go</code></td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Go 目录配置</td>
+<td>创建 /root/go 结构</td>
+<td><code>/root/go/</code></td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Runner 依赖</td>
+<td>安装 sudo, libicu70</td>
+<td><code>/usr/lib/</code></td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>10</td>
+<td>创建 runner 用户</td>
+<td>新建用户 + sudoers 配置</td>
+<td><code>/etc/passwd</code>, <code>/etc/sudoers.d/</code></td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>11</td>
+<td>FUSE 配置</td>
+<td>修改 /etc/fuse.conf</td>
+<td><code>/etc/fuse.conf</code></td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>12</td>
+<td>环境验证</td>
+<td>运行版本检查命令</td>
+<td>(无新文件，仅输出)</td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>13</td>
+<td>清理缓存</td>
+<td>删除 apt 缓存，减小镜像大小</td>
+<td><code>/var/lib/apt/lists/</code> (删除)</td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>14</td>
+<td>创建工作目录</td>
+<td>mkdir /workspace</td>
+<td><code>/workspace/</code></td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>15</td>
+<td>配置所有权</td>
+<td>chown -R runner:runner /workspace</td>
+<td>(权限改变)</td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>16</td>
+<td>设置默认用户</td>
+<td>USER runner</td>
+<td>(运行上下文改变)</td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>17</td>
+<td>健康检查配置</td>
+<td>HEALTHCHECK 元数据</td>
+<td>(镜像元数据)</td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>18</td>
+<td>ENTRYPOINT 设置</td>
+<td>设置容器入口点</td>
+<td>(镜像元数据)</td>
+<td>CACHED</td>
+</tr>
+<tr>
+<td>19</td>
+<td>CMD 设置</td>
+<td>设置默认命令</td>
+<td>(镜像元数据)</td>
+<td>CACHED</td>
+</tr>
+</table>
+
+<h4>关键说明</h4>
+<div class="info-box info">
+<strong>📍 文件位置</strong><br>
+• 容器内路径: <code>/usr/bin/</code>, <code>/usr/lib/</code> 等均指容器文件系统内部<br>
+• 宿主机位置: <code>/var/lib/docker/overlay2/</code> (Docker 存储驱动)<br>
+• 最终镜像: <code>/var/lib/docker/image/overlay2/</code> (镜像元数据)
+</div>
+
+<div class="info-box warning">
+<strong>⏳ 构建时间参考</strong><br>
+• 首次构建（无缓存）: 3-5 分钟<br>
+• 后续构建（带缓存）: 10-30 秒<br>
+• 如卡在 (16/19): 可能在下载 nfs-common 或 Go，请稍等
+</div>
+
+<h4>Docker 容器操作</h4>
+<table>
+<tr><th>命令</th><th>说明</th></tr>
+<tr><td>docker run -it rclone-ci:latest bash</td><td>交互式运行</td></tr>
+<tr><td>docker run --rm -v "$(pwd)":/workspace rclone-ci:latest make</td><td>一次性执行</td></tr>
+<tr><td>docker ps -a</td><td>查看容器列表</td></tr>
+<tr><td>docker logs &lt;container-id&gt;</td><td>查看日志</td></tr>
+<tr><td>docker exec -it &lt;container-id&gt; bash</td><td>进入运行中的容器</td></tr>
+</table>
+
+<h4>Docker Compose 操作</h4>
+<table>
+<tr><th>命令</th><th>说明</th></tr>
+<tr><td>docker-compose up -d</td><td>启动环境</td></tr>
+<tr><td>docker-compose exec runner bash</td><td>进入容器</td></tr>
+<tr><td>docker-compose exec runner verify-ci-env</td><td>验证环境</td></tr>
+<tr><td>docker-compose logs -f runner</td><td>查看日志</td></tr>
+<tr><td>docker-compose down</td><td>停止并移除容器</td></tr>
+<tr><td>docker-compose down -v</td><td>停止并删除卷</td></tr>
+</table>
+
+<h3>🔧 环境变量配置</h3>
+<div class="code-block">export CGO_ENABLED=1
+export GO111MODULE=on
+export GOFLAGS="-v"
+export GOCACHE=/root/.cache/go-build
+export GOMODCACHE=/root/go/pkg/mod</div>
+
+<h3>🐛 快速故障排查</h3>
+
+<div class="info-box danger">
+<strong>镜像构建失败</strong><br>
+docker builder prune -a<br>
+docker build -f Dockerfile.ci --progress=plain -t rclone-ci:latest .
+</div>
+
+<div class="info-box danger">
+<strong>权限问题</strong><br>
+docker run --cap-add SYS_ADMIN --security-opt apparmor:unconfined --device /dev/fuse rclone-ci:latest verify-ci-env
+</div>
+
+<div class="info-box warning">
+<strong>FUSE 挂载失败</strong><br>
+cat /etc/fuse.conf | grep user_allow_other<br>
+sudo modprobe fuse
+</div>
+
+<h3>📝 工作流配置 Snippets</h3>
+
+<h4>最小配置</h4>
+<div class="code-block">jobs:
+  build:
+    runs-on: [self-hosted, linux, docker]
+    container:
+      image: rclone-ci:latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: make</div>
+
+<h4>完整配置（标准）</h4>
+<div class="code-block">jobs:
+  build:
+    runs-on: [self-hosted, linux, docker]
+    container:
+      image: rclone-ci:latest
+      options: |
+        --cpus 4
+        --memory 8g
+        -v /dev/fuse:/dev/fuse
+        --cap-add SYS_ADMIN
+      env:
+        CGO_ENABLED: "1"
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: verify-ci-env
+      - run: go mod download
+      - run: make
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rclone-binary
+          path: rclone</div>
+</div>
+
+<div id="section4">
+<h2>4️⃣ Docker 方案：GitHub Actions Runner 部署指南</h2>
+
+<h3>📋 概述</h3>
+<p>此方案使用 <strong>Docker 容器</strong>替代之前的裸机 Runner 方案，解决环境差异问题。</p>
+
+<h3>核心优势</h3>
+<table>
+<tr><th>方面</th><th>裸机方案</th><th>Docker方案</th></tr>
+<tr><td><strong>环境一致性</strong></td><td>❌ 依赖系统环境</td><td>✅ 完全隔离</td></tr>
+<tr><td><strong>复杂度</strong></td><td>❌ 多个 wrapper 脚本</td><td>✅ 单个 Dockerfile</td></tr>
+<tr><td><strong>可维护性</strong></td><td>❌ 版本漂移风险</td><td>✅ 版本固定</td></tr>
+<tr><td><strong>可重现性</strong></td><td>❌ 难以复现</td><td>✅ 完全可重现</td></tr>
+<tr><td><strong>快速部署</strong></td><td>❌ ~30 分钟</td><td>✅ ~5 分钟</td></tr>
+<tr><td><strong>隔离性</strong></td><td>❌ 共享主机资源</td><td>✅ 容器隔离</td></tr>
+</table>
+
+<h3>🔧 快速开始</h3>
+
+<h4>前置条件</h4>
+<ul>
+<li><strong>操作系统</strong>: Rocky Linux 9.4 - 9.7 （推荐）或其他 RHEL 兼容系统</li>
+<li><strong>Docker Engine</strong> >= 20.10（通过清华源安装）</li>
+<li><strong>Docker Compose</strong> >= 2.0（通常与 Docker Engine 一起安装）</li>
+<li>至少 <strong>5GB</strong> 可用磁盘空间</li>
+</ul>
+
+<h4>✅ 重要说明</h4>
+<div class="info-box success">
+<strong>旧方案已淘汰 - 完全无需以下任何工具：</strong><br>
+❌ apt-get wrapper 脚本<br>
+❌ JSON 配置文件<br>
+❌ jq 依赖<br>
+✅ 新 Docker 方案完全独立，开箱即用！
+</div>
+
+<h4>0️⃣ 安装 Docker Engine（清华源 - Rocky 9.x）</h4>
+
+<div class="code-block">#!/bin/bash
+# 在 Rocky Linux 9.x 系统上快速安装 Docker CE（使用清华源）
+
+# 1. 移除旧版本 Docker
+sudo dnf remove docker docker-client docker-client-latest docker-common 2>/dev/null || true
+
+# 2. 安装必要工具
+sudo dnf install -y dnf-plugins-core
+
+# 3. 配置清华源（国内访问更快）
+sudo dnf config-manager --add-repo https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/centos/docker-ce.repo
+
+# 4. 更新缓存
+sudo dnf makecache
+
+# 5. 安装 Docker CE、CLI、Compose 等
+sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# 6. 启动和启用 Docker 服务
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# 7. 验证安装
+docker --version
+docker-compose --version</div>
+
+<h4>0️⃣ Docker 镜像源检测与自动配置</h4>
+
+<p><strong>问题</strong>: Docker 镜像拉取缓慢（尤其国内网络）<br>
+<strong>解决</strong>: 使用以下脚本自动检测最快的镜像源，并配置到 Docker
+
+<div class="code-block">#!/usr/bin/env bash
+set -euo pipefail
+
+OUT="mirror_check_$(date +%Y%m%d_%H%M%S).csv"
+echo "mirror,endpoint,http_code,time_total,size_download" > "$OUT"
+
+# 可编辑的镜像加速器列表
+mirrors=(
+  "https://docker.mirrors.ustc.edu.cn"
+  "https://hub-mirror.c.163.com"
+  "https://registry.docker-cn.com"
+  "https://mirrors.aliyun.com"
+  "https://hub-mirror.baidubce.com"
+)
+
+endpoints=("" "/v2/" "/_ping")
+
+# 运行检查
+for m in "${mirrors[@]}"; do
+  for e in "${endpoints[@]}"; do
+    url="${m%/}${e}"
+    out=$(curl -sS -L --max-time 10 --connect-timeout 5 -w "%{http_code},%{time_total},%{size_download}" -o /dev/null "$url" 2>/dev/null) || out="000,0,0"
+    echo "$m,$e,$out" >> "$OUT"
+    http_code=$(echo $out | cut -d, -f1)
+    [ "$http_code" = "200" ] && echo "✅ $url: HTTP $http_code"
+  done
+done
+
+# 选择第一个返回 200 的镜像源并自动配置
+good_mirror=$(grep ',200,' "$OUT" | head -1 | cut -d, -f1)
+
+if [ -n "$good_mirror" ]; then
+  echo ""
+  echo "选择镜像源: $good_mirror"
+  sudo mkdir -p /etc/docker
+  sudo tee /etc/docker/daemon.json > /dev/null <<EOF
+{
+  "registry-mirrors": ["$good_mirror"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  }
+}
+EOF
+  
+  sudo systemctl daemon-reload
+  sudo systemctl restart docker
+  
+  echo "✅ 配置完成！Docker 已重启"
+  docker info | grep -A 3 "Registry Mirrors"
+else
+  echo "❌ 未找到有效的镜像源，请检查网络"
+  exit 1
+fi</div>
+
+<p><strong>使用步骤</strong>:</p>
+<ol>
+<li>保存上面的脚本为 <code>setup-docker-mirrors.sh</code></li>
+<li>赋予执行权限: <code>chmod +x setup-docker-mirrors.sh</code></li>
+<li>运行脚本: <code>./setup-docker-mirrors.sh</code></li>
+<li>脚本会自动检测并配置最快的镜像源</li>
+</ol>
+
+<h4>1️⃣ 本地测试（使用 Docker Compose）</h4>
+<div class="code-block">cd /path/to/rclone
+
+# 启动 CI 环境（首次会拉取镜像，需要几分钟）
+docker-compose up -d
+
+# 验证环境（检查所有依赖）
+docker-compose exec runner verify-ci-env
+
+# 进入容器进行开发
+docker-compose exec runner bash
+
+# 查看容器日志
+docker-compose logs -f runner
+
+# 停止环境并清理卷
+docker-compose down -v</div>
+
+<h4>2️⃣ 构建镜像</h4>
+<div class="code-block">docker build -f Dockerfile.ci -t rclone-ci:latest .
+docker run --rm rclone-ci:latest verify-ci-env
+docker images rclone-ci</div>
+
+<h4>3️⃣ 运行容器</h4>
+<div class="code-block"># 交互式运行
+docker run -it --rm \
+  -v "$(pwd)":/workspace \
+  -w /workspace \
+  rclone-ci:latest bash
+
+# 一次性执行命令
+docker run --rm \
+  -v "$(pwd)":/workspace \
+  -w /workspace \
+  rclone-ci:latest \
+  bash -c "go version && make test"</div>
+
+<h3>📦 生产部署</h3>
+
+<h4>方案 A：Runner 机器使用 Docker（完全容器化）</h4>
+<p>此方案将 GitHub Actions Runner 本身也运行在容器中。</p>
+
+<h4>方案 B：Runner 在宿主机，Job 在容器中（推荐混合方案）</h4>
+<p>此方案将 Runner 保持在宿主机，但每个 Job 在容器中执行（最灵活的方案）。</p>
+
+<h4>工作流配置</h4>
+<div class="code-block">name: Build rclone
+on: [push]
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux, docker]
+    container:
+      image: rclone-ci:latest
+      options: --cpus 4 --memory 8g
+      volumes:
+        - /dev/fuse:/dev/fuse
+      env:
+        CGO_ENABLED: "1"
+    
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify CI environment
+        run: verify-ci-env
+      - name: Download dependencies
+        run: go mod download
+      - name: Build rclone
+        run: make
+      - name: Run tests
+        run: make test
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rclone-binary
+          path: rclone
+          retention-days: 30</div>
+
+<h3>🔧 故障排查</h3>
+
+<div class="info-box danger">
+<strong>问题 1: 镜像构建失败</strong><br>
+<strong>症状</strong>: docker build -f Dockerfile.ci ... 返回错误<br>
+<strong>解决步骤</strong>:<br>
+1. 检查网络连接: ping 8.8.8.8<br>
+2. 增加 Docker 构建日志详度: docker build -f Dockerfile.ci --progress=plain -t rclone-ci:latest .<br>
+3. 清理 Docker 缓存后重试: docker builder prune -a && docker build -f Dockerfile.ci -t rclone-ci:latest .
+</div>
+
+<div class="info-box danger">
+<strong>问题 2: 容器运行时权限不足</strong><br>
+<strong>症状</strong>: Permission denied 或 operation not permitted<br>
+<strong>解决方案</strong>:<br>
+docker run --rm --cap-add SYS_ADMIN --security-opt apparmor:unconfined --device /dev/fuse rclone-ci:latest verify-ci-env
+</div>
+
+<div class="info-box warning">
+<strong>问题 3: 编译速度缓慢</strong><br>
+<strong>症状</strong>: go build 或 make 命令耗时过长<br>
+<strong>优化方案</strong>:<br>
+1. 使用 Docker Compose 中定义的卷缓存<br>
+2. 预热 Go modules 缓存: docker-compose exec runner go mod download<br>
+3. 使用多核编译: docker run --rm -e GOMAXPROCS=8 rclone-ci:latest bash -c "go build -p 8"
+</div>
+
+<h3>✨ 最佳实践</h3>
+
+<h4>1. 镜像大小优化</h4>
+<p>当前 Dockerfile 可能产生约 1GB 的镜像，可以通过多阶段构建进一步优化。</p>
+
+<h4>2. 缓存策略</h4>
+<div class="code-block"># ✅ 预加载缓存（前置工作）
+docker-compose up -d
+docker-compose exec runner go mod download
+docker-compose down
+
+# ✅ GitHub Actions 中使用缓存 Action
+- uses: actions/cache@v4
+  with:
+    path: |
+      /root/.cache/go-build
+      /root/go/pkg/mod
+    key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}</div>
+
+<h4>3. 安全性最佳实践</h4>
+<div class="code-block"># ✅ 使用特定版本标签
+docker run rclone-ci:v1.0.0  # ✅ 好
+
+docker run rclone-ci:latest  # ⚠️ 不推荐用于生产</div>
+
+<h4>4. 监控和日志</h4>
+<div class="code-block">docker logs github-actions-runner
+docker stats github-actions-runner
+docker exec -it github-actions-runner bash</div>
+
+<h4>5. 更新镜像</h4>
+<div class="code-block">docker build -f Dockerfile.ci --no-cache -t rclone-ci:latest .</div>
+</div>
+
+<div id="section5">
+<h2>5️⃣ 从裸机方案迁移到 Docker 方案</h2>
+
+<h3>为什么要迁移？</h3>
+
+<h4>裸机方案的问题 (v3.1)</h4>
+<table>
+<tr><th>问题</th><th>影响</th></tr>
+<tr><td><strong>多脚本依赖</strong></td><td>5+ 个脚本（apt-get wrapper、JSON 配置、jq、verify-env 等）</td></tr>
+<tr><td><strong>环境漂移</strong></td><td>系统更新导致环境变化，难以调试</td></tr>
+<tr><td><strong>维护复杂</strong></td><td>修改一个包需要更新 JSON、可能重建系统</td></tr>
+<tr><td><strong>初始化耗时</strong></td><td>首次部署需要 30+ 分钟</td></tr>
+</table>
+
+<h4>Docker 方案的优势</h4>
+<ul>
+<li>✅ <strong>一个 Dockerfile</strong> 定义整个环境</li>
+<li>✅ <strong>完全隔离</strong> 避免系统环境影响</li>
+<li>✅ <strong>快速部署</strong> 5 分钟完成镜像构建</li>
+<li>✅ <strong>容易维护</strong> 修改只需调整 Dockerfile</li>
+<li>✅ <strong>本地复现</strong> 同样的镜像在任何机器上运行相同</li>
+<li>✅ <strong>标准化</strong> 由 GitHub 官方推荐的方案</li>
+</ul>
+
+<h3>🔄 迁移时间表</h3>
+<div class="code-block">Phase 1: 准备（1-2 天）
+  ├─ 创建 Dockerfile.ci ✓
+  ├─ 创建 docker-compose.yml ✓
+  ├─ 验证本地构建
+  └─ 准备工作流文件
+
+Phase 2: 测试（2-3 天）
+  ├─ 创建功能分支测试
+  ├─ 运行示例工作流
+  ├─ 验证构建物
+  └─ 对比性能
+
+Phase 3: 上线（1 天）
+  ├─ 更新主工作流
+  ├─ 监控 CI 日志
+  └─ 验证构建稳定性
+
+Phase 4: 清理（1 天）
+  ├─ 删除旧脚本
+  ├─ 删除配置文件
+  ├─ 更新文档
+  └─ 归档旧配置</div>
+
+<h3>📝 分步迁移指南</h3>
+
+<h4>Step 1: 验证 Docker 环境</h4>
+<div class="code-block">docker --version        # 应为 >= 20.10
+docker-compose --version  # 应为 >= 2.0
+df -h | grep -E "/$|/home"  # 至少 10GB 可用</div>
+
+<h4>Step 2: 本地构建镜像</h4>
+<div class="code-block">cd /path/to/rclone
+docker build -f Dockerfile.ci -t rclone-ci:latest .</div>
+
+<h4>Step 3: 验证镜像</h4>
+<div class="code-block">docker run --rm rclone-ci:latest verify-ci-env
+# 预期输出应该看到：✅ CI ENVIRONMENT VERIFICATION PASSED</div>
+
+<h4>Step 4: 本地编译测试</h4>
+<div class="code-block">docker-compose up -d
+docker-compose exec runner bash -c "cd /workspace && make"
+docker-compose down</div>
+
+<h4>Step 5: 创建测试分支</h4>
+<div class="code-block">git checkout -b test/docker-ci
+git push origin test/docker-ci</div>
+
+<h4>Step 6: 验证工作流</h4>
+<p>在 GitHub Actions 中查看测试分支的工作流运行情况。</p>
+
+<h4>Step 7: 合并到主分支</h4>
+<div class="code-block">git checkout main
+git merge test/docker-ci
+git push origin main</div>
+
+<h3>✅ 验证检查清单</h3>
+
+<h4>本地验证</h4>
+<ul>
+<li>☐ Docker 和 docker-compose 已安装</li>
+<li>☐ docker build -f Dockerfile.ci ... 成功</li>
+<li>☐ docker run --rm rclone-ci:latest verify-ci-env 全部通过</li>
+<li>☐ docker-compose up && make 成功编译</li>
+<li>☐ 编译输出的 rclone 可执行文件正常运行</li>
+</ul>
+
+<h4>工作流验证</h4>
+<ul>
+<li>☐ GitHub Actions 工作流已更新（container 配置）</li>
+<li>☐ 测试分支的工作流成功运行（> 1 次）</li>
+<li>☐ 编译时间稳定（5-15 分钟）</li>
+<li>☐ Artifacts 正确上传</li>
+<li>☐ 测试用例全部通过（如有）</li>
+</ul>
+
+<h3>🔙 回滚计划</h3>
+<p>如果需要回到裸机方案，可以快速恢复：</p>
+<div class="code-block">git checkout before-docker-migration -- .github/workflows/
+sudo systemctl restart actions-runner</div>
+
+<h3>❓ 常见问题</h3>
+
+<div class="info-box info">
+<strong>Q: 迁移后，本地开发是否受影响？</strong><br>
+<strong>A</strong>: 不受影响。Docker 方案只影响 CI/CD 流程。本地开发环境（如你的 macOS/Windows）可继续使用现有设置。
+</div>
+
+<div class="info-box info">
+<strong>Q: Docker 镜像需要多久更新一次？</strong><br>
+<strong>A</strong>: 安全补丁建议每月更新一次。工具版本根据需要更新。
+</div>
+
+<div class="info-box info">
+<strong>Q: Docker 镜像占用多少空间？</strong><br>
+<strong>A</strong>: 镜像约 1.5GB，加上缓存约 3.5GB 总计。
+</div>
+
+<div class="info-box info">
+<strong>Q: 支持哪些架构？</strong><br>
+<strong>A</strong>: 当前针对 x86_64（AMD64）。可使用 docker buildx 支持多平台。
+</div>
+</div>
+
+<div id="section6">
+<h2>6️⃣ Docker CI/CD 方案 - 资源总览</h2>
+
+<h3>📌 快速导航</h3>
+
+<h4>🚀 新手入门</h4>
+<ul>
+<li><strong>首次使用？</strong> → 快速开始（5分钟）</li>
+<li><strong>详细步骤？</strong> → 完整部署指南</li>
+<li><strong>速查表？</strong> → 快速参考</li>
+</ul>
+
+<h4>🔄 从旧方案迁移</h4>
+<ul>
+<li><strong>从裸机到 Docker</strong> → 迁移指南</li>
+<li><strong>分步骤迁移地图</strong> → 迁移时间表</li>
+</ul>
+
+<h4>🔧 命令和工具</h4>
+<ul>
+<li><strong>常用 Docker 命令</strong> → docker-ci-commands.sh</li>
+<li><strong>命令速查</strong> → 快速参考</li>
+</ul>
+
+<h4>❓ 遇到问题</h4>
+<ul>
+<li><strong>故障排查</strong> → 部署指南</li>
+<li><strong>常见问题</strong> → 迁移指南</li>
+</ul>
+
+<h3>📂 文件结构说明</h3>
+<div class="code-block">rclone/
+├── Dockerfile.ci                     # CI 专用 Dockerfile
+├── docker-compose.yml                # 本地开发配置
+├── docker-ci-commands.sh             # 便捷工具脚本
+├── .github/workflows/
+│   └── docker-build.yml              # GitHub Actions 工作流
+└── 附录/
+    ├── Docker方案部署指南.md         # 完整部署文档
+    ├── Docker快速参考.md             # 速查表
+    ├── 迁移指南-从裸机到Docker.md    # 迁移步骤
+    └── Docker_CI资源总览.md          # 资源导航</div>
+
+<h3>🔑 核心文件说明</h3>
+
+<h4>Dockerfile.ci - CI 编译环境定义</h4>
+<ul>
+<li><strong>用途</strong>: 定义 CI 编译环境</li>
+<li><strong>特点</strong>: 基于 Rocky Linux 9.4，包含 Go 编译环境、所有开发库、FUSE 支持</li>
+<li><strong>大小</strong>: 约 1.5 GB</li>
+<li><strong>构建</strong>: docker build -f Dockerfile.ci -t rclone-ci:latest .</li>
+</ul>
+
+<h4>docker-compose.yml - 本地开发和测试</h4>
+<ul>
+<li><strong>用途</strong>: 本地开发和测试</li>
+<li><strong>特点</strong>: 一键启动完整开发环境，自动挂载代码卷、缓存卷、FUSE 设备</li>
+<li><strong>使用</strong>: docker-compose up -d && docker-compose exec runner bash</li>
+</ul>
+
+<h4>.github/workflows/docker-build.yml - GitHub Actions 配置</h4>
+<ul>
+<li><strong>用途</strong>: GitHub Actions 工作流配置</li>
+<li><strong>特点</strong>: 完整的构建、测试、上传工件流程，包含缓存策略</li>
+<li><strong>集成</strong>: 复制到 .github/workflows/ 或合并内容到现有工作流</li>
+</ul>
+
+<h3>📊 对比：Docker vs 裸机方案</h3>
+<table>
+<tr><th>指标</th><th>裸机方案（v3.1）</th><th>Docker 方案</th></tr>
+<tr><td><strong>环境定义</strong></td><td>5+ 个脚本 + JSON 配置</td><td>1 个 Dockerfile</td></tr>
+<tr><td><strong>初次部署</strong></td><td>30-40 分钟</td><td>5-10 分钟</td></tr>
+<tr><td><strong>磁盘占用</strong></td><td>2-3 GB</td><td>1.5 GB（镜像）+ 缓存</td></tr>
+<tr><td><strong>环境一致性</strong></td><td>⚠️ 易漂移</td><td>✅ 完全隔离</td></tr>
+<tr><td><strong>可维护性</strong></td><td>⚠️ 复杂</td><td>✅ 简洁</td></tr>
+<tr><td><strong>脚本依赖</strong></td><td>apt-get wrapper, jq</td><td>Docker Engine</td></tr>
+<tr><td><strong>学习成本</strong></td><td>高（自定义）</td><td>低（标准方案）</td></tr>
+</table>
+
+<h3>🎯 使用场景</h3>
+
+<h4>场景 1：首次尝试（5分钟）</h4>
+<div class="code-block">docker build -f Dockerfile.ci -t rclone-ci:latest .
+docker run --rm rclone-ci:latest verify-ci-env
+docker run --rm -v "$(pwd)":/workspace -w /workspace rclone-ci:latest make</div>
+
+<h4>场景 2：本地开发（持续工作）</h4>
+<div class="code-block">docker-compose up -d
+docker-compose exec runner bash
+# 编码、构建、测试...
+docker-compose down</div>
+
+<h4>场景 3：GitHub Actions CI（自动运行）</h4>
+<p>使用 .github/workflows/docker-build.yml 配置</p>
+
+<h3>💡 最佳实践建议</h3>
+
+<h4>1. 缓存策略</h4>
+<ul>
+<li>预加载缓存（前置工作）</li>
+<li>GitHub Actions 中使用 cache Action</li>
+</ul>
+
+<h4>2. 版本控制</h4>
+<ul>
+<li>使用特定版本标签（如 v1.0.0）</li>
+<li>推送到私有仓库</li>
+</ul>
+
+<h4>3. 监控和日志</h4>
+<ul>
+<li>常规监控: docker stats</li>
+<li>深度诊断: docker inspect</li>
+<li>GitHub Actions 中启用调试日志</li>
+</ul>
+
+<h4>4. 定期更新</h4>
+<ul>
+<li>月度安全更新</li>
+<li>保存更新日志</li>
+</ul>
+
+<h3>🔗 相关资源</h3>
+
+<h4>官方文档</h4>
+<ul>
+<li><a href="https://docs.docker.com/">🐳 Docker 官方文档</a></li>
+<li><a href="https://docs.docker.com/compose/">🚀 Docker Compose 文档</a></li>
+<li><a href="https://docs.github.com/en/actions">🤖 GitHub Actions 文档</a></li>
+<li><a href="https://github.com/rclone/rclone#building">🛠️ rclone 构建指南</a></li>
+<li><a href="https://docs.rockylinux.org/">🐧 Rocky Linux 文档</a></li>
+</ul>
+
+<h3>📈 迁移快速检查</h3>
+
+<h4>✅ 迁移前（确认已完成）</h4>
+<ul>
+<li>☐ Docker 和 docker-compose 已安装</li>
+<li>☐ docker build -f Dockerfile.ci ... 成功</li>
+<li>☐ docker run --rm rclone-ci:latest verify-ci-env 通过</li>
+<li>☐ 本地测试编译成功</li>
+</ul>
+
+<h4>✅ 迁移中（行动项）</h4>
+<ul>
+<li>☐ 创建功能分支测试</li>
+<li>☐ 更新 GitHub Actions 工作流</li>
+<li>☐ 运行工作流验证</li>
+<li>☐ 备份旧配置</li>
+</ul>
+
+<h4>✅ 迁移后（清理）</h4>
+<ul>
+<li>☐ 删除旧的脚本</li>
+<li>☐ 删除配置文件</li>
+<li>☐ 更新文档</li>
+<li>☐ 监控 CI 日志（48 小时）</li>
+</ul>
+
+<h3>📝 文档维护</h3>
+<table>
+<tr><th>文档</th><th>最后更新</th><th>覆盖内容</th></tr>
+<tr><td>Docker方案部署指南.md</td><td>2026-02-20</td><td>详细部署、故障排查、最佳实践</td></tr>
+<tr><td>Docker快速参考.md</td><td>2026-02-20</td><td>命令速查、snippets、进阶技巧</td></tr>
+<tr><td>迁移指南-从裸机到Docker.md</td><td>2026-02-20</td><td>迁移策略、分步指南、检查清单</td></tr>
+<tr><td>Docker_CI资源总览.md</td><td>2026-02-20</td><td>资源导航、使用场景、最佳实践</td></tr>
+</table>
+</div>
+
+<div class="footer">
+<p style="margin-bottom: 10px;"><strong>Docker CI/CD 完整指南整合版</strong></p>
+<p style="margin-bottom: 10px;">由所有相关 Markdown 文档整合生成 | 包含全部 5 个 Docker 相关文档的完整内容</p>
+<p style="margin-bottom: 10px;"><strong>版本</strong>: v1.0 | <strong>日期</strong>: 2026-02-20 | <strong>状态</strong>: ✅ 正式版本</p>
+<p>💾 保存此页面或使用浏览器打印功能生成 PDF 版本 | 🌐 推荐使用 Chrome 或 Firefox 浏览</p>
+</div>
+
+</div>
+</body>
+</html>
