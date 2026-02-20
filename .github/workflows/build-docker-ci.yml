@@ -1,0 +1,255 @@
+name: Build rclone with Docker CI
+
+# Trigger: 推送到main分支、手动触发、定时构建
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: '构建类型'
+        required: true
+        default: 'quick'
+        type: choice
+        options:
+          - quick
+          - full
+          - debug
+  schedule:
+    # 每天10:00 UTC 执行一次全量构建
+    - cron: '0 10 * * *'
+
+jobs:
+  # ============================================================================
+  # 前置验证：确保self-hosted runner环境正常
+  # ============================================================================
+  
+  verify-runner:
+    name: Verify Docker Runner Environment
+    runs-on: [self-hosted, docker]
+    timeout-minutes: 10
+    
+    steps:
+      - name: Check System Info
+        run: |
+          echo "=== System Information ==="
+          uname -a
+          whoami
+          groups
+          echo ""
+          echo "=== Docker Status ==="
+          docker --version
+          docker ps
+          echo ""
+          echo "=== Available Resources ==="
+          nproc
+          free -h
+          df -h /
+
+  # ============================================================================
+  # 主构建任务
+  # ============================================================================
+  
+  build-docker:
+    name: Build rclone in Docker
+    needs: verify-runner
+    runs-on: [self-hosted, docker]
+    timeout-minutes: 120
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        build_target:
+          - linux-amd64
+          - linux-arm64
+          - linux-386
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整历史用于版本信息
+      
+      - name: Display Build Info
+        run: |
+          echo "=== Build Configuration ==="
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Build Target: ${{ matrix.build_target }}"
+          echo "Build Type: ${{ github.event.inputs.build_type || 'auto' }}"
+          echo "Trigger: ${{ github.event_name }}"
+          echo ""
+          echo "=== Workspace ==="
+          echo "Workspace: $GITHUB_WORKSPACE"
+          echo "Runner Temp: $RUNNER_TEMP"
+          echo "Runner Tool Cache: $RUNNER_TOOL_CACHE"
+      
+      - name: Build rclone with Docker
+        run: |
+          echo "=== Starting Docker Build ==="
+          echo "Target: ${{ matrix.build_target }}"
+          echo "Build Type: ${{ github.event.inputs.build_type || 'quick' }}"
+          echo ""
+          
+          # 使用 docker-ci-commands.sh 中的构建命令
+          if [ ! -f "docker-ci-commands.sh" ]; then
+            echo "Creating docker-ci-commands.sh symlink..."
+            ln -s 附录/Docker/docker-ci-commands.sh . || true
+          fi
+          
+          # 构建Docker镜像
+          ./docker-ci-commands.sh build
+          
+          echo ""
+          echo "=== Verifying Build Environment ==="
+          ./docker-ci-commands.sh verify
+      
+      - name: Compile rclone (${{ matrix.build_target }})
+        run: |
+          echo "=== Compiling rclone for ${{ matrix.build_target }} ==="
+          
+          # 根据构建目标设置编译参数
+          case "${{ matrix.build_target }}" in
+            linux-amd64)
+              BUILD_FLAGS="GOOS=linux GOARCH=amd64"
+              ;;
+            linux-arm64)
+              BUILD_FLAGS="GOOS=linux GOARCH=arm64"
+              ;;
+            linux-386)
+              BUILD_FLAGS="GOOS=linux GOARCH=386"
+              ;;
+            *)
+              BUILD_FLAGS=""
+              ;;
+          esac
+          
+          docker run --rm \
+            -v "$(pwd)":/workspace \
+            -w /workspace \
+            -e "BUILD_FLAGS=$BUILD_FLAGS" \
+            rclone-ci:latest \
+            bash -c "
+              set -e
+              echo 'Go version:'
+              go version
+              echo ''
+              echo 'Building rclone...'
+              $BUILD_FLAGS go build -o rclone-${{ matrix.build_target }} ./cmd/rclone
+              echo ''
+              echo 'Build complete!'
+              ls -lh rclone-${{ matrix.build_target }}
+            "
+      
+      - name: Run Tests
+        if: github.event.inputs.build_type != 'debug'
+        run: |
+          echo "=== Running Tests ==="
+          docker run --rm \
+            -v "$(pwd)":/workspace \
+            -w /workspace \
+            rclone-ci:latest \
+            bash -c "
+              set -e
+              echo 'Running quick tests...'
+              go test -v -short -count=1 ./internal/... -timeout=5m 2>&1 | head -100
+              echo ''
+              echo 'Test run complete!'
+            "
+      
+      - name: Create Build Artifact
+        if: success()
+        run: |
+          echo "=== Creating Artifacts ==="
+          mkdir -p build-artifacts
+          
+          # 复制编译成果
+          if [ -f "rclone-${{ matrix.build_target }}" ]; then
+            cp rclone-${{ matrix.build_target }} build-artifacts/
+            echo "✓ Copied rclone-${{ matrix.build_target }}"
+          fi
+          
+          # 创建build info文件
+          cat > build-artifacts/BUILD_INFO.txt <<EOF
+          Rclone Build Information
+          =======================
+          Repository: ${{ github.repository }}
+          Branch: ${{ github.ref }}
+          Commit: ${{ github.sha }}
+          Build Target: ${{ matrix.build_target }}
+          Build Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          Runner: ${{ runner.name }}
+          Trigger: ${{ github.event_name }}
+          EOF
+          
+          echo ""
+          ls -lh build-artifacts/
+      
+      - name: Upload Artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rclone-build-${{ matrix.build_target }}
+          path: build-artifacts/
+          retention-days: 30
+      
+      - name: Clean Up
+        if: always()
+        run: |
+          echo "=== Cleanup ==="
+          
+          # 清理Docker缓存（可选）
+          # ./docker-ci-commands.sh cache-clean
+          
+          # 显示磁盘使用
+          ./docker-ci-commands.sh disk-usage
+
+  # ============================================================================
+  # 构建总结
+  # ============================================================================
+  
+  build-summary:
+    name: Build Summary
+    runs-on: [self-hosted, docker]
+    needs: build-docker
+    if: always()
+    timeout-minutes: 5
+    
+    steps:
+      - name: Print Build Status
+        run: |
+          cat << 'EOF'
+          
+          ╔════════════════════════════════════════════════════════════════════╗
+          ║                   Docker CI Build Complete                         ║
+          ╚════════════════════════════════════════════════════════════════════╝
+          
+          Build Summary:
+          - Repository: ${{ github.repository }}
+          - Branch: ${{ github.ref }}
+          - Commit: ${{ github.sha }}
+          - Build Status: ${{ needs.build-docker.result }}
+          - Build Time: ${{ job.duration }}
+          - Runner: ${{ runner.name }}
+          - Trigger: ${{ github.event_name }}
+          
+          Artifacts:
+          - Download from GitHub Actions Artifacts page
+          - Retention: 30 days
+          
+          Next Steps:
+          1. 下载编译成果
+          2. 验证可执行文件
+          3. 发布Release（如需要）
+          
+          Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          EOF
+      
+      - name: Report Build Status
+        if: failure()
+        run: |
+          echo "❌ Build Failed"
+          echo "Please check the logs above for details."
+          exit 1

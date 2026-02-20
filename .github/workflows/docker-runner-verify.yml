@@ -16,7 +16,7 @@ on:
 jobs:
   runner-verification:
     name: Verify Self-Hosted Docker Runner
-    runs-on: [self-hosted, docker]
+    runs-on: self-hosted
     timeout-minutes: 15
     
     steps:

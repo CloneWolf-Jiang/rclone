@@ -87,6 +87,12 @@ Docker CI 常用命令集合
   go-version         查看 Go 版本
   env                显示容器内环境变量
 
+  # Screen 会话（长时间任务）
+  screen-build       在 screen 中运行构建（SSH断开后继续运行）
+  screen-make        在 screen 中运行编译
+  screen-list        列出所有 screen 会话
+  screen-attach      连接到指定的 screen 会话
+
 示例:
   ./docker-ci-commands.sh setup              # 首次运行：安装 Docker
   ./docker-ci-commands.sh setup-mirrors      # 配置国内镜像源
@@ -478,7 +484,8 @@ cmd_setup() {
         lvm2 \
         curl \
         bind-utils \
-        jq
+        jq \
+        screen
     
     log_info "第 3 步：添加清华源"
     sudo dnf config-manager --add-repo \
@@ -784,6 +791,115 @@ cmd_env() {
 }
 
 # ============================================================================
+# Screen 会话命令
+# ============================================================================
+
+check_screen() {
+    if ! command -v screen &>/dev/null; then
+        log_error "screen 未安装"
+        echo ""
+        echo "安装 screen："
+        echo "  sudo dnf install screen          # Rocky/CentOS"
+        echo "  sudo apt install screen          # Ubuntu/Debian"
+        echo ""
+        exit 1
+    fi
+}
+
+cmd_screen_build() {
+    check_screen
+    check_docker
+    
+    local session_name="rclone-build-$(date +%s)"
+    
+    log_info "在 screen 会话中运行构建..."
+    echo "Session Name: $session_name"
+    echo ""
+    echo "Screen 快捷键："
+    echo "  Ctrl + A, D  - 脱离 screen（保持运行）"
+    echo "  Ctrl + C     - 停止构建"
+    echo ""
+    echo "后续连接："
+    echo "  screen -r $session_name"
+    echo ""
+    
+    screen -S "$session_name" -d -m bash -c "cd $(pwd) && ./docker-ci-commands.sh build"
+    
+    log_success "构建已在后台启动"
+    echo ""
+    log_info "监控构建进度："
+    echo "  screen -r $session_name"
+    echo ""
+    log_info "列出所有会话："
+    echo "  screen -ls"
+}
+
+cmd_screen_make() {
+    check_screen
+    check_docker
+    
+    local session_name="rclone-make-$(date +%s)"
+    
+    log_info "在 screen 会话中运行编译..."
+    echo "Session Name: $session_name"
+    echo ""
+    echo "Screen 快捷键："
+    echo "  Ctrl + A, D  - 脱离 screen（保持运行）"
+    echo "  Ctrl + C     - 停止编译"
+    echo ""
+    echo "后续连接："
+    echo "  screen -r $session_name"
+    echo ""
+    
+    screen -S "$session_name" -d -m bash -c "cd $(pwd) && ./docker-ci-commands.sh run-make"
+    
+    log_success "编译已在后台启动"
+    echo ""
+    log_info "监控编译进度："
+    echo "  screen -r $session_name"
+    echo ""
+    log_info "列出所有会话："
+    echo "  screen -ls"
+}
+
+cmd_screen_list() {
+    check_screen
+    
+    log_info "列出所有 screen 会话..."
+    echo ""
+    
+    if screen -ls | grep -q "socket"; then
+        screen -ls
+    else
+        log_warn "没有运行中的 screen 会话"
+    fi
+    
+    echo ""
+    log_info "连接到会话："
+    echo "  screen -r <session-name>"
+    echo ""
+    log_info "结束会话："
+    echo "  screen -X -S <session-name> quit"
+}
+
+cmd_screen_attach() {
+    check_screen
+    
+    if [[ -z "$1" ]]; then
+        log_error "请指定会话名"
+        echo ""
+        log_info "可用会话："
+        screen -ls 2>/dev/null | grep -E "^\s" || log_warn "没有运行中的会话"
+        echo ""
+        echo "用法: $0 screen-attach <session-name>"
+        exit 1
+    fi
+    
+    log_info "连接到 screen 会话: $1"
+    screen -r "$1"
+}
+
+# ============================================================================
 # 主程序
 # ============================================================================
 
@@ -882,6 +998,20 @@ main() {
             ;;
         env)
             cmd_env
+            ;;
+        
+        # Screen 会话
+        screen-build)
+            cmd_screen_build
+            ;;
+        screen-make)
+            cmd_screen_make
+            ;;
+        screen-list)
+            cmd_screen_list
+            ;;
+        screen-attach)
+            cmd_screen_attach "$2"
             ;;
         
         # 帮助
