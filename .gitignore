@@ -20,3 +20,11 @@ __pycache__
 .DS_Store
 resource_windows_*.syso
 .devcontainer
+backend/alias/逻辑.md
+附录/generate-script-on-synology.sh
+附录/jellyfin-rename-season5-douluo.sh
+附录/rclone-alist.service
+附录/README-synology-service.md
+附录/Docker/libfuse3-x86_64.tar.gz
+附录/Docker/rclone.tar.gz
+附录/synology-rclone-service.sh

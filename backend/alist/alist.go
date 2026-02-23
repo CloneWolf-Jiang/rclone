@@ -64,6 +64,11 @@ func init() {
 			Help:     "远程根路径（可选：使用此路径作为工作空间的基础路径）",
 			Required: false,
 		}, {
+			Name:     "overwrite",
+			Help:     "覆盖模式：启用后，上传时若目标文件已存在，会自动删除后重新上传",
+			Default:  "false",
+			Advanced: false,
+		}, {
 			Name:     config.ConfigEncoding,
 			Help:     config.ConfigEncodingHelp,
 			Advanced: true,
@@ -101,12 +106,13 @@ func init() {
 
 // Options 定义此后端的配置选项
 type Options struct {
-	APIURL   string               `config:"api_url"`
-	UserName string               `config:"username"`
-	Password string               `config:"password"`
-	Token    string               `config:"token"`
-	RootPath string               `config:"root_path"`
-	Enc      encoder.MultiEncoder `config:"encoding"`
+	APIURL    string               `config:"api_url"`
+	UserName  string               `config:"username"`
+	Password  string               `config:"password"`
+	Token     string               `config:"token"`
+	RootPath  string               `config:"root_path"`
+	Overwrite bool                 `config:"overwrite"`
+	Enc       encoder.MultiEncoder `config:"encoding"`
 }
 
 // Fs 表示远程存储
@@ -907,7 +913,21 @@ func (f *Fs) Move(ctx context.Context, src fs.Object, remote string) (fs.Object,
 
 	fs.Debugf(nil, "Move: 源路径=%q 目标路径=%q", srcPath, dstPath)
 
-	// 目标文件处理按后端/上层策略执行（不在此处预先备份）
+	// 如果启用了 overwrite，改名前删除可能存在的目标文件
+	if f.opt.Overwrite {
+		targetObj, checkErr := f.NewObject(ctx, remote)
+		if checkErr == nil && targetObj != nil {
+			// 目标文件存在，删除它
+			fs.Debugf(src, "Move: overwrite 已启用，删除目标文件: %q", dstPath)
+			deleteErr := targetObj.Remove(ctx)
+			if deleteErr != nil {
+				// 删除失败但继续尝试改名（可能目标已不存在或改名失败）
+				fs.Infof(src, "Move: 无法删除目标文件: %v（继续尝试改名）", deleteErr)
+			} else {
+				fs.Debugf(src, "Move: 目标文件已删除: %q", dstPath)
+			}
+		}
+	}
 
 	// 计算目录/文件名
 	srcName = path.Base(srcPath)
@@ -925,6 +945,8 @@ func (f *Fs) Move(ctx context.Context, src fs.Object, remote string) (fs.Object,
 			fs.Debugf(nil, "Move: 源路径与目标路径完全一致，跳过")
 			return f.NewObject(ctx, remote)
 		}
+
+		fs.Infof(src, "Move: 执行 rename 操作 - 源=%q 目标=%q (同目录)", srcName, dstName)
 
 		var renameResp RenameResponse
 		err = f.pacer.Call(func() (bool, error) {
@@ -945,26 +967,46 @@ func (f *Fs) Move(ctx context.Context, src fs.Object, remote string) (fs.Object,
 					_ = resp.Body.Close()
 				}
 			}()
-			return f.shouldRetry(ctx, resp, err)
+			// 检查网络层错误
+			if err != nil {
+				return f.shouldRetry(ctx, resp, err)
+			}
+			// 检查业务层错误（API 返回 code != 200）：应视为失败，让 shouldRetry 处理
+			if renameResp.Code != 200 {
+				msgDetail := renameResp.Message
+				if msgDetail == "" {
+					msgDetail = fmt.Sprintf("code=%d", renameResp.Code)
+				}
+				// 将业务层错误转换为错误，让 shouldRetry 统一处理
+				apiErr := fmt.Errorf("Alist API 返回错误: %s", msgDetail)
+				return f.shouldRetry(ctx, resp, apiErr)
+			}
+			// 成功（HTTP 2xx && API code == 200）
+			return false, nil
 		})
 		if err != nil {
-			return nil, fmt.Errorf("重命名失败: %w", err)
-		}
-		if renameResp.Code != 200 {
+			// 统一处理所有错误（网络层 + 业务层）
 			if renameResp.Code == 403 {
+				fs.Errorf(src, "Move: 重命名操作被拒绝 - %s (from=%q to=%q)", renameResp.Message, srcPath, dstPath)
 				return nil, fs.ErrorDirExists
 			}
-			return nil, fmt.Errorf("重命名失败: %s (代码:%d)", renameResp.Message, renameResp.Code)
+			fs.Errorf(src, "Move: 重命名操作失败 - %v", err)
+			return nil, fmt.Errorf("重命名失败: %w", err)
 		}
 
 		// 刷新目录缓存
 		f.dirCache.FlushDir(srcDir)
+
+		fs.Debugf(src, "Move: 重命名操作成功 - %q → %q", srcName, dstName)
 
 		return f.NewObject(ctx, remote)
 	}
 
 	// 2) 路径不一致，调用 /api/fs/move
 	var moveResp MoveResponse
+
+	fs.Infof(src, "Move: 执行 move 操作 - 源=%q 目标=%q (跨目录: %q → %q)", srcName, dstName, srcDir, dstDir)
+
 	err = f.pacer.Call(func() (bool, error) {
 		req := MoveRequest{
 			SrcDir: srcDir,
@@ -984,20 +1026,38 @@ func (f *Fs) Move(ctx context.Context, src fs.Object, remote string) (fs.Object,
 				_ = resp.Body.Close()
 			}
 		}()
-		return f.shouldRetry(ctx, resp, err)
+		// 检查网络层错误
+		if err != nil {
+			return f.shouldRetry(ctx, resp, err)
+		}
+		// 检查业务层错误（API 返回 code != 200）：应视为失败，让 shouldRetry 处理
+		if moveResp.Code != 200 {
+			msgDetail := moveResp.Message
+			if msgDetail == "" {
+				msgDetail = fmt.Sprintf("code=%d", moveResp.Code)
+			}
+			// 将业务层错误转换为错误，让 shouldRetry 统一处理
+			apiErr := fmt.Errorf("Alist API 返回错误: %s", msgDetail)
+			return f.shouldRetry(ctx, resp, apiErr)
+		}
+		// 成功（HTTP 2xx && API code == 200）
+		return false, nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("移动失败: %w", err)
-	}
-	if moveResp.Code != 200 {
+		// 统一处理所有错误（网络层 + 业务层）
 		if moveResp.Code == 403 {
+			fs.Errorf(src, "Move: move 被拒绝 - destination already exists (from=%q to=%q)", srcPath, dstPath)
 			return nil, fs.ErrorDirExists
 		}
 		if moveResp.Code == 400 || moveResp.Code == 501 {
+			fs.Debugf(src, "Move: move 不支持 (code=%d)", moveResp.Code)
 			return nil, fs.ErrorCantMove
 		}
-		return nil, fmt.Errorf("移动失败: %s (代码:%d)", moveResp.Message, moveResp.Code)
+		fs.Errorf(src, "Move: move 失败 - %v", err)
+		return nil, fmt.Errorf("移动失败: %w", err)
 	}
+
+	fs.Debugf(src, "Move: move 成功 - %q → %q (from=%q to=%q)", srcName, dstName, srcDir, dstDir)
 
 	// 刷新目录缓存，若为相同目录仅刷新一次以避免重复操作
 	if srcDir == dstDir {
@@ -1856,8 +1916,15 @@ func (o *Object) Open(ctx context.Context, options ...fs.OpenOption) (in io.Read
 			return o.fs.shouldRetry(ctx, resp, err)
 		}
 
+		// 诊断：强制输出 Alist 返回的所有信息（Errorf 确保 -vv 下必定显示）
+		fs.Errorf(nil, "[ALIST_API_RESPONSE] path=%s code=%d msg=%s raw_url_len=%d", fullPath, getResponse.Code, getResponse.Message, len(getResponse.Data.RawURL))
+
 		if getResponse.Code != 200 {
-			return false, fmt.Errorf("获取文件下载链接失败: %s (代码:%d)", getResponse.Message, getResponse.Code)
+			// 如果是 404 或 500，说明文件不存在，应该立即失败而不是重试
+			if getResponse.Code == 404 || getResponse.Code == 500 {
+				return false, fmt.Errorf("文件不存在或已删除: %s (代码:%d, 消息:%s)", fullPath, getResponse.Code, getResponse.Message)
+			}
+			return false, fmt.Errorf("获取文件下载链接失败: %s (代码:%d, raw_url=%s)", getResponse.Message, getResponse.Code, getResponse.Data.RawURL)
 		}
 
 		return false, nil
@@ -1868,22 +1935,34 @@ func (o *Object) Open(ctx context.Context, options ...fs.OpenOption) (in io.Read
 	}
 
 	if getResponse.Data.RawURL == "" {
-		return nil, fmt.Errorf("无法获取文件下载链接: raw_url 为空")
+		return nil, fmt.Errorf("无法获取文件下载链接 - raw_url 为空 (code=%d, message=%s, 文件可能已被删除)", getResponse.Code, getResponse.Message)
 	}
+
+	// 诊断日志：成功获取 raw_url
+	fs.Infof(o, "[ALIST_OPEN_SUCCESS] path=%s size=%d raw_url_len=%d", fullPath, o.size, len(getResponse.Data.RawURL))
 
 	// 第二步：通过 raw_url 下载文件
 	var resp *http.Response
 	err = o.fs.pacer.Call(func() (bool, error) {
 		opts := rest.Opts{
 			Method:  "GET",
-			Path:    getResponse.Data.RawURL,
+			RootURL: getResponse.Data.RawURL,
+			Path:    "",
 			Options: options,
 		}
 		resp, err = o.fs.srv.Call(ctx, &opts)
 		return o.fs.shouldRetry(ctx, resp, err)
 	})
 	if err != nil {
-		return nil, fmt.Errorf("打开文件失败: %w", err)
+		fs.Errorf(o, "[ALIST_HTTP_FAILED] path=%s error=%v", fullPath, err)
+		return nil, fmt.Errorf("打开文件失败 (HTTP 请求失败): %w", err)
+	}
+
+	// 检查 HTTP 状态码（接受所有 2xx 状态码，包括 206 Partial Content）
+	if resp != nil && (resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices) {
+		fs.Errorf(o, "[ALIST_HTTP_STATUS] path=%s status=%d", fullPath, resp.StatusCode)
+		_ = resp.Body.Close()
+		return nil, fmt.Errorf("打开文件失败 (HTTP 状态码 %d)", resp.StatusCode)
 	}
 
 	return resp.Body, nil
@@ -1993,11 +2072,17 @@ func (o *Object) Update(ctx context.Context, in io.Reader, src fs.ObjectInfo, op
 		respBody, _ := io.ReadAll(resp.Body)
 		fs.CheckClose(resp.Body, &err)
 
-		// 成功上传（2xx）
-		if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
-			// 解析上传响应（可能为 data == null）
-			var uploadResp UploadResponse
-			_ = json.Unmarshal(respBody, &uploadResp)
+		// 调试日志：显示 HTTP 状态码和响应体（用于诊断 Alist 的实际返回）
+		fs.Infof(o, "Update: Alist 上传响应 - StatusCode=%d, ResponseBody=%s", resp.StatusCode, string(respBody))
+
+		// 解析 Alist API 响应（检查业务层状态码，而非仅 HTTP 状态码）
+		var uploadResp UploadResponse
+		parseErr := json.Unmarshal(respBody, &uploadResp)
+
+		// 成功上传：需要同时满足 HTTP 2xx 和 Alist API code=200
+		if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices &&
+			parseErr == nil && uploadResp.Code == 200 {
+			// ✅ 上传成功：Alist 业务状态确认为 200
 
 			// 若响应中未提供大小信息，则调用 /api/fs/get 获取单个文件信息（更精确且开销更小）
 			o.size = contentLength // 先做保底赋值
@@ -2037,23 +2122,42 @@ func (o *Object) Update(ctx context.Context, in io.Reader, src fs.ObjectInfo, op
 			return false, nil
 		}
 
-		// 非 2xx 响应作为错误处理
+		// ❌ 上传失败：可能是 HTTP 非 2xx，或者 HTTP 200 但 Alist API code != 200
+		// 从响应中提取错误原因
 		var errMsg string
-		var errResp struct {
-			Code    int    `json:"code"`
-			Message string `json:"message"`
-		}
-		if err := json.Unmarshal(respBody, &errResp); err == nil && errResp.Message != "" {
-			errMsg = errResp.Message
-		} else if len(respBody) > 0 {
-			errMsg = string(respBody)
+
+		// 优先使用 uploadResp 中的消息（若已解析）
+		if parseErr == nil && uploadResp.Code != 0 {
+			errMsg = uploadResp.Message
+			if errMsg == "" {
+				errMsg = fmt.Sprintf("code=%d", uploadResp.Code)
+			}
 		} else {
-			errMsg = resp.Status
+			// 尝试解析响应体中的错误信息
+			var errResp struct {
+				Code    int    `json:"code"`
+				Message string `json:"message"`
+			}
+			if err := json.Unmarshal(respBody, &errResp); err == nil && errResp.Message != "" {
+				errMsg = errResp.Message
+			} else if len(respBody) > 0 {
+				errMsg = string(respBody)
+			} else {
+				errMsg = resp.Status
+			}
 		}
 
-		return o.fs.shouldRetry(ctx, resp, fmt.Errorf("上传文件失败: %s (状态码:%d)", errMsg, resp.StatusCode))
-	})
+		// 详细日志：显示是 HTTP 层还是 Alist 业务层的错误
+		if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
+			// HTTP 200 但 Alist 业务层拒绝
+			fs.Errorf(o, "Update: Alist 业务层拒绝上传 - 原因=%s (Alist code=%d)", errMsg, uploadResp.Code)
+		} else {
+			// HTTP 非 2xx 错误
+			fs.Errorf(o, "Update: Alist 拒绝上传 - 原因=%s (HTTP状态码:%d)", errMsg, resp.StatusCode)
+		}
 
+		return o.fs.shouldRetry(ctx, resp, fmt.Errorf("上传文件失败: %s", errMsg))
+	})
 	return err
 }
 
