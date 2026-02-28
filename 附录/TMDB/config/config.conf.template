@@ -1,0 +1,17 @@
+{
+  "api": {
+    "key": "",
+    "language": "zh-CN",
+    "timeout": 10
+  },
+  "naming": {
+    "include_episode_name": true,
+    "episode_separator": " - ",
+    "format_style": "default"
+  },
+  "behavior": {
+    "dry_run": false,
+    "interactive": false,
+    "batch_mode": false
+  }
+}

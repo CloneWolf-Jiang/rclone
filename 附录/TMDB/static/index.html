@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMDB 电视剧重命名工具</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🎬 TMDB 电视剧文件智能重命名工具</h1>
+                <p class="subtitle">自动从 TMDB 获取正确的剧集信息</p>
+            </div>
+        </header>
+
+        <!-- 主容器 -->
+        <main class="main-content">
+            <!-- 左侧面板 -->
+            <aside class="left-panel">
+                <div class="panel-header">
+                    <h2>🔧 配置区域</h2>
+                </div>
+
+                <!-- API密钥配置 -->
+                <div class="config-section">
+                    <h3>API 密钥配置</h3>
+                    <div class="form-group">
+                        <label for="apiKey">TMDB API 密钥:</label>
+                        <div class="api-key-input-group">
+                            <input type="password" id="apiKey" class="form-control" placeholder="输入你的 API 密钥">
+                            <button id="toggleApiKey" class="btn btn-sm">👁️</button>
+                        </div>
+                        <small>获取: <a href="https://www.themoviedb.org/settings/api" target="_blank">TMDB API Settings</a></small>
+                    </div>
+                    <button id="saveApiKey" class="btn btn-primary btn-block">保存API密钥</button>
+                    <div id="apiKeyStatus" class="status-message"></div>
+                </div>
+
+                <!-- 电视剧搜索 -->
+                <!-- 电视剧搜索和选择 -->
+                <div class="config-section">
+                    <h3>电视剧选择</h3>
+                    <button id="searchSeries" class="btn btn-primary btn-block">🔍 打开电视剧选择</button>
+                    
+                    <div id="selectedSeries" class="selected-series" style="display: none;">
+                        <h4>已选择:</h4>
+                        <p id="selectedSeriesName"></p>
+                        <small id="selectedSeriesDate"></small>
+                    </div>
+                </div>
+
+                <!-- 文件名格式设置 -->
+                <div class="config-section">
+                    <h3>文件名格式识别</h3>
+                    <div class="form-group">
+                        <label for="exampleFilename">示例文件名:</label>
+                        <input type="text" id="exampleFilename" class="form-control" 
+                               placeholder="例: Breaking Bad S01E01.mkv">
+                    </div>
+                    <button id="analyzeFormat" class="btn btn-default btn-block">分析格式</button>
+                    
+                    <div id="formatAnalysis" class="format-analysis" style="display: none;">
+                        <h4>识别到的格式:</h4>
+                        <div id="detectedPatterns"></div>
+                        <div class="form-group">
+                            <label for="customRegex">自定义正则表达式:</label>
+                            <input type="text" id="customRegex" class="form-control" 
+                                   placeholder="例: [Ss](\d{1,2})[Ee](\d{1,2})">
+                            <small class="text-muted">必须包含2个捕获组：第1组为季号，第2组为集号</small>
+                        </div>
+                        <button id="testRegex" class="btn btn-small" style="margin-top: 5px;">测试正则</button>
+                        <button id="saveAsRule" class="btn btn-small btn-success" style="margin-top: 5px;">保存为规则</button>
+                    </div>
+                </div>
+
+                <!-- 自定义规则管理 -->
+                <div class="config-section">
+                    <h3>自定义规则</h3>
+                    <div id="rulesList" class="rules-list"></div>
+                    <button id="addRuleBtn" class="btn btn-small btn-success btn-block">+ 新建规则</button>
+                </div>
+
+                <!-- 预览设置 -->
+                <div class="config-section">
+                    <h3>预览设置</h3>
+                    <div class="form-group">
+                        <label for="previewCount">预览文件数:</label>
+                        <input type="number" id="previewCount" class="form-control" 
+                               value="5" min="1" max="100">
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 中间和右侧内容区 -->
+            <div class="content-area">
+                <!-- 上方：目录树预览 -->
+                <div class="preview-section">
+                    <div class="preview-header">
+                        <h2>📁 文件预览</h2>
+                        <div class="preview-controls">
+                            <button id="refreshTree" class="btn btn-sm">🔄 刷新</button>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="showAllFiles"> 显示所有文件
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="preview-container">
+                        <!-- 左侧：原始文件 -->
+                        <div class="preview-panel original-files">
+                            <h3>原始文件</h3>
+                            <div id="originalTreeContainer" class="tree-container">
+                                <div class="loading">加载中...</div>
+                            </div>
+                        </div>
+
+                        <!-- 右侧：修改后的文件 -->
+                        <div class="preview-panel preview-files">
+                            <h3>修改后的文件</h3>
+                            <div id="previewTreeContainer" class="tree-container">
+                                <div class="loading">选择原始文件查看预览</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 下方：操作区 -->
+                <div class="action-section">
+                    <div class="action-header">
+                        <h2>📝 操作</h2>
+                    </div>
+
+                    <div class="action-list" id="fileList">
+                        <div class="empty-state">
+                            <p>选择要重命名的文件</p>
+                        </div>
+                    </div>
+
+                    <div class="action-controls">
+                        <button id="selectAll" class="btn btn-default" style="display: none;">全选</button>
+                        <button id="clearSelection" class="btn btn-default" style="display: none;">取消选择</button>
+                        <button id="renameFiles" class="btn btn-success btn-lg" disabled>
+                            开始重命名 (<span id="selectedCount">0</span>)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 模态框：确认重命名 -->
+    <div id="confirmModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>确认重命名</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>即将重命名 <strong id="confirmCount">0</strong> 个文件，此操作无法撤销！</p>
+                <div id="confirmList" class="confirm-list" style="max-height: 300px; overflow-y: auto;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmCancel" class="btn btn-default">取消</button>
+                <button id="confirmRename" class="btn btn-success">确认重命名</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：操作结果 -->
+    <div id="resultModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>操作结果</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>成功: <strong id="resultSuccess">0</strong></p>
+                <p>失败: <strong id="resultFailed">0</strong></p>
+                <div id="resultErrors" class="error-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="resultClose" class="btn btn-primary">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：电视剧选择（3列布局） -->
+    <div id="seriesSelectionModal" class="modal series-modal" style="display: none;">
+        <div class="modal-content series-modal-content">
+            <div class="modal-header series-modal-header">
+                <h2>电视剧选择</h2>
+                <div class="series-search-group">
+                    <input type="text" id="seriesSearchInput" class="series-search-box" placeholder="搜索电视剧...">
+                    <button id="seriesSearchBtn" class="btn btn-sm btn-primary">🔍 搜索</button>
+                </div>
+                <button class="modal-close">&times;</button>
+            </div>
+            
+            <div class="modal-body series-modal-body">
+                <!-- 左列：电视剧列表 -->
+                <div class="series-column series-list-column">
+                    <h3>电视剧列表</h3>
+                    <div id="seriesListContainer" class="series-list">
+                        <div class="loading">搜索中...</div>
+                    </div>
+                </div>
+
+                <!-- 中列：季份列表 -->
+                <div class="series-column season-list-column">
+                    <h3>季份列表</h3>
+                    <div id="seasonListContainer" class="season-list">
+                        <div class="empty-state">选择一个电视剧</div>
+                    </div>
+                </div>
+
+                <!-- 右列：详细信息 -->
+                <div class="series-column series-details-column">
+                    <h3>详细信息</h3>
+                    <div id="seriesDetailsContainer" class="series-details">
+                        <div class="empty-state">选择一个电视剧和季份</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="seriesSelectCancel" class="btn btn-default">取消</button>
+                <button id="seriesSelectConfirm" class="btn btn-success" disabled>确认选择</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

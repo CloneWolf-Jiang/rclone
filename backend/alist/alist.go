@@ -1916,8 +1916,8 @@ func (o *Object) Open(ctx context.Context, options ...fs.OpenOption) (in io.Read
 			return o.fs.shouldRetry(ctx, resp, err)
 		}
 
-		// 诊断：强制输出 Alist 返回的所有信息（Errorf 确保 -vv 下必定显示）
-		fs.Errorf(nil, "[ALIST_API_RESPONSE] path=%s code=%d msg=%s raw_url_len=%d", fullPath, getResponse.Code, getResponse.Message, len(getResponse.Data.RawURL))
+		fs.Debugf(nil, "[ALIST_API_RESPONSE] path=%s code=%d msg=%s raw_url_len=%d",
+			fullPath, getResponse.Code, getResponse.Message, len(getResponse.Data.RawURL))
 
 		if getResponse.Code != 200 {
 			// 如果是 404 或 500，说明文件不存在，应该立即失败而不是重试
@@ -2058,7 +2058,7 @@ func (o *Object) Update(ctx context.Context, in io.Reader, src fs.ObjectInfo, op
 			ContentLength: &contentLength,
 			ExtraHeaders: map[string]string{
 				"Authorization": o.fs.token,
-				"File-Path":     url.QueryEscape(fullPath),
+				"File-Path":     fullPath,
 				"As-Task":       "false",
 			},
 		}

@@ -1,0 +1,1258 @@
+<!DOCTYPE html><html><head>
+      <title>📖完整使用指南</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+      <link rel="stylesheet" href="file:///c:\Users\Panth\.vscode\extensions\shd101wyy.markdown-preview-enhanced-0.8.20\crossnote\dependencies\katex\katex.min.css">
+      
+      
+      
+      
+      
+      <style>
+      code[class*=language-],pre[class*=language-]{color:#333;background:0 0;font-family:Consolas,"Liberation Mono",Menlo,Courier,monospace;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.4;-moz-tab-size:8;-o-tab-size:8;tab-size:8;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}pre[class*=language-]{padding:.8em;overflow:auto;border-radius:3px;background:#f5f5f5}:not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;white-space:normal;background:#f5f5f5}.token.blockquote,.token.comment{color:#969896}.token.cdata{color:#183691}.token.doctype,.token.macro.property,.token.punctuation,.token.variable{color:#333}.token.builtin,.token.important,.token.keyword,.token.operator,.token.rule{color:#a71d5d}.token.attr-value,.token.regex,.token.string,.token.url{color:#183691}.token.atrule,.token.boolean,.token.code,.token.command,.token.constant,.token.entity,.token.number,.token.property,.token.symbol{color:#0086b3}.token.prolog,.token.selector,.token.tag{color:#63a35c}.token.attr-name,.token.class,.token.class-name,.token.function,.token.id,.token.namespace,.token.pseudo-class,.token.pseudo-element,.token.url-reference .token.variable{color:#795da3}.token.entity{cursor:help}.token.title,.token.title .token.punctuation{font-weight:700;color:#1d3e81}.token.list{color:#ed6a43}.token.inserted{background-color:#eaffea;color:#55a532}.token.deleted{background-color:#ffecec;color:#bd2c00}.token.bold{font-weight:700}.token.italic{font-style:italic}.language-json .token.property{color:#183691}.language-markup .token.tag .token.punctuation{color:#333}.language-css .token.function,code.language-css{color:#0086b3}.language-yaml .token.atrule{color:#63a35c}code.language-yaml{color:#183691}.language-ruby .token.function{color:#333}.language-markdown .token.url{color:#795da3}.language-makefile .token.symbol{color:#795da3}.language-makefile .token.variable{color:#183691}.language-makefile .token.builtin{color:#0086b3}.language-bash .token.keyword{color:#0086b3}pre[data-line]{position:relative;padding:1em 0 1em 3em}pre[data-line] .line-highlight-wrapper{position:absolute;top:0;left:0;background-color:transparent;display:block;width:100%}pre[data-line] .line-highlight{position:absolute;left:0;right:0;padding:inherit 0;margin-top:1em;background:hsla(24,20%,50%,.08);background:linear-gradient(to right,hsla(24,20%,50%,.1) 70%,hsla(24,20%,50%,0));pointer-events:none;line-height:inherit;white-space:pre}pre[data-line] .line-highlight:before,pre[data-line] .line-highlight[data-end]:after{content:attr(data-start);position:absolute;top:.4em;left:.6em;min-width:1em;padding:0 .5em;background-color:hsla(24,20%,50%,.4);color:#f4f1ef;font:bold 65%/1.5 sans-serif;text-align:center;vertical-align:.3em;border-radius:999px;text-shadow:none;box-shadow:0 1px #fff}pre[data-line] .line-highlight[data-end]:after{content:attr(data-end);top:auto;bottom:.4em}html body{font-family:'Helvetica Neue',Helvetica,'Segoe UI',Arial,freesans,sans-serif;font-size:16px;line-height:1.6;color:#333;background-color:#fff;overflow:initial;box-sizing:border-box;word-wrap:break-word}html body>:first-child{margin-top:0}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{line-height:1.2;margin-top:1em;margin-bottom:16px;color:#000}html body h1{font-size:2.25em;font-weight:300;padding-bottom:.3em}html body h2{font-size:1.75em;font-weight:400;padding-bottom:.3em}html body h3{font-size:1.5em;font-weight:500}html body h4{font-size:1.25em;font-weight:600}html body h5{font-size:1.1em;font-weight:600}html body h6{font-size:1em;font-weight:600}html body h1,html body h2,html body h3,html body h4,html body h5{font-weight:600}html body h5{font-size:1em}html body h6{color:#5c5c5c}html body strong{color:#000}html body del{color:#5c5c5c}html body a:not([href]){color:inherit;text-decoration:none}html body a{color:#08c;text-decoration:none}html body a:hover{color:#00a3f5;text-decoration:none}html body img{max-width:100%}html body>p{margin-top:0;margin-bottom:16px;word-wrap:break-word}html body>ol,html body>ul{margin-bottom:16px}html body ol,html body ul{padding-left:2em}html body ol.no-list,html body ul.no-list{padding:0;list-style-type:none}html body ol ol,html body ol ul,html body ul ol,html body ul ul{margin-top:0;margin-bottom:0}html body li{margin-bottom:0}html body li.task-list-item{list-style:none}html body li>p{margin-top:0;margin-bottom:0}html body .task-list-item-checkbox{margin:0 .2em .25em -1.8em;vertical-align:middle}html body .task-list-item-checkbox:hover{cursor:pointer}html body blockquote{margin:16px 0;font-size:inherit;padding:0 15px;color:#5c5c5c;background-color:#f0f0f0;border-left:4px solid #d6d6d6}html body blockquote>:first-child{margin-top:0}html body blockquote>:last-child{margin-bottom:0}html body hr{height:4px;margin:32px 0;background-color:#d6d6d6;border:0 none}html body table{margin:10px 0 15px 0;border-collapse:collapse;border-spacing:0;display:block;width:100%;overflow:auto;word-break:normal;word-break:keep-all}html body table th{font-weight:700;color:#000}html body table td,html body table th{border:1px solid #d6d6d6;padding:6px 13px}html body dl{padding:0}html body dl dt{padding:0;margin-top:16px;font-size:1em;font-style:italic;font-weight:700}html body dl dd{padding:0 16px;margin-bottom:16px}html body code{font-family:Menlo,Monaco,Consolas,'Courier New',monospace;font-size:.85em;color:#000;background-color:#f0f0f0;border-radius:3px;padding:.2em 0}html body code::after,html body code::before{letter-spacing:-.2em;content:'\00a0'}html body pre>code{padding:0;margin:0;word-break:normal;white-space:pre;background:0 0;border:0}html body .highlight{margin-bottom:16px}html body .highlight pre,html body pre{padding:1em;overflow:auto;line-height:1.45;border:#d6d6d6;border-radius:3px}html body .highlight pre{margin-bottom:0;word-break:normal}html body pre code,html body pre tt{display:inline;max-width:initial;padding:0;margin:0;overflow:initial;line-height:inherit;word-wrap:normal;background-color:transparent;border:0}html body pre code:after,html body pre code:before,html body pre tt:after,html body pre tt:before{content:normal}html body blockquote,html body dl,html body ol,html body p,html body pre,html body ul{margin-top:0;margin-bottom:16px}html body kbd{color:#000;border:1px solid #d6d6d6;border-bottom:2px solid #c7c7c7;padding:2px 4px;background-color:#f0f0f0;border-radius:3px}@media print{html body{background-color:#fff}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{color:#000;page-break-after:avoid}html body blockquote{color:#5c5c5c}html body pre{page-break-inside:avoid}html body table{display:table}html body img{display:block;max-width:100%;max-height:100%}html body code,html body pre{word-wrap:break-word;white-space:pre}}.markdown-preview{width:100%;height:100%;box-sizing:border-box}.markdown-preview ul{list-style:disc}.markdown-preview ul ul{list-style:circle}.markdown-preview ul ul ul{list-style:square}.markdown-preview ol{list-style:decimal}.markdown-preview ol ol,.markdown-preview ul ol{list-style-type:lower-roman}.markdown-preview ol ol ol,.markdown-preview ol ul ol,.markdown-preview ul ol ol,.markdown-preview ul ul ol{list-style-type:lower-alpha}.markdown-preview .newpage,.markdown-preview .pagebreak{page-break-before:always}.markdown-preview pre.line-numbers{position:relative;padding-left:3.8em;counter-reset:linenumber}.markdown-preview pre.line-numbers>code{position:relative}.markdown-preview pre.line-numbers .line-numbers-rows{position:absolute;pointer-events:none;top:1em;font-size:100%;left:0;width:3em;letter-spacing:-1px;border-right:1px solid #999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.markdown-preview pre.line-numbers .line-numbers-rows>span{pointer-events:none;display:block;counter-increment:linenumber}.markdown-preview pre.line-numbers .line-numbers-rows>span:before{content:counter(linenumber);color:#999;display:block;padding-right:.8em;text-align:right}.markdown-preview .mathjax-exps .MathJax_Display{text-align:center!important}.markdown-preview:not([data-for=preview]) .code-chunk .code-chunk-btn-group{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .status{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .output-div{margin-bottom:16px}.markdown-preview .md-toc{padding:0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link div,.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}.markdown-preview .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}.scrollbar-style::-webkit-scrollbar{width:8px}.scrollbar-style::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}.scrollbar-style::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,.66);border:4px solid rgba(150,150,150,.66);background-clip:content-box}html body[for=html-export]:not([data-presentation-mode]){position:relative;width:100%;height:100%;top:0;left:0;margin:0;padding:0;overflow:auto}html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{position:relative;top:0;min-height:100vh}@media screen and (min-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em calc(50% - 457px + 2em)}}@media screen and (max-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{font-size:14px!important;padding:1em}}@media print{html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{display:none}}html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{position:fixed;bottom:8px;left:8px;font-size:28px;cursor:pointer;color:inherit;z-index:99;width:32px;text-align:center;opacity:.4}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] #sidebar-toc-btn{opacity:1}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc{position:fixed;top:0;left:0;width:300px;height:100%;padding:32px 0 48px 0;font-size:14px;box-shadow:0 0 4px rgba(150,150,150,.33);box-sizing:border-box;overflow:auto;background-color:inherit}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar{width:8px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,.66);border:4px solid rgba(150,150,150,.66);background-clip:content-box}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc a{text-decoration:none}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc{padding:0 16px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link div,html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{left:300px;width:calc(100% - 300px);padding:2em calc(50% - 457px - 300px / 2);margin:0;box-sizing:border-box}@media screen and (max-width:1274px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{width:100%}}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .markdown-preview{left:50%;transform:translateX(-50%)}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .md-sidebar-toc{display:none}
+/* Please visit the URL below for more information: */
+/*   https://shd101wyy.github.io/markdown-preview-enhanced/#/customize-css */
+
+      </style>
+      <!-- The content below will be included at the end of the <head> element. --><script type="text/javascript">
+  document.addEventListener("DOMContentLoaded", function () {
+    // your code here
+  });
+</script></head><body for="html-export">
+    
+    
+      <div class="crossnote markdown-preview  ">
+      <div>
+<h1 id="-tmdb-文件重命名工具---完整使用指南">🎬 TMDB 文件重命名工具 - 完整使用指南 </h1>
+<p><strong>最后更新：2026 年 2 月 28 日 | 版本：1.1 | 生产就绪</strong> ✅</p>
+<blockquote>
+<p>一个文件搞定所有问题！使用目录快速跳转到你需要的部分。</p>
+</blockquote>
+<hr>
+<h2 id="-快速目录">📖 快速目录 </h2>
+<ul>
+<li><strong><a href="#3%E5%88%86%E9%92%9F%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B">⚡ 3分钟快速开始</a></strong> - 立即上手</li>
+<li><strong><a href="#web%E7%95%8C%E9%9D%A2%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97">🖱️ Web界面完全指南</a></strong> - UI 操作详解</li>
+<li><strong><a href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E8%A7%84%E5%88%99%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97">📝 自定义规则完全指南</a></strong> - 规则编写和 API</li>
+<li><strong><a href="#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98--%E6%95%85%E9%9A%9C%E6%8E%92%E9%99%A4">❓ 常见问题 &amp; 故障排除</a></strong> - 遇到问题时看这里</li>
+<li><strong><a href="#%E9%85%8D%E7%BD%AE%E5%8F%82%E8%80%83">🔧 配置参考</a></strong> - 参数调整</li>
+<li><strong><a href="#api-%E5%8F%82%E8%80%83">⚙️ API 参考</a></strong> - REST API 调用</li>
+<li><strong><a href="#%E5%B8%B8%E7%94%A8%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E9%80%9F%E6%9F%A5">🔥 常用正则表达式速查</a></strong> - 复制即用</li>
+<li><strong><a href="#-%E5%BC%80%E5%8F%91%E8%BF%9B%E5%BA%A6">🚀 开发进度</a></strong> - 界面优化更新日志</li>
+</ul>
+<hr>
+<h1 id="3分钟快速开始">3分钟快速开始 </h1>
+<h2 id="我的问题是什么">我的问题是什么？ </h2>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>我从不同网站下载的电视剧，文件名命名规则千奇百怪。
+我需要一个工具自动识别这些格式，统一重命名。
+</code></pre><h2 id="解决方案">解决方案 </h2>
+<p>这个工具可以：</p>
+<ul>
+<li>✅ 自动识别各种文件名格式</li>
+<li>✅ 自动查询 TMDB 获取正确信息</li>
+<li>✅ 自动重命名为统一格式</li>
+<li>✅ 用户可自定义规则，一次设置永久使用</li>
+</ul>
+<h2 id="启动程序">启动程序 </h2>
+<h3 id="windows-用户">Windows 用户 </h3>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>双击 快速启动.bat
+</code></pre><h3 id="linuxmac-用户">Linux/Mac 用户 </h3>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token function">bash</span> 快速启动.sh
+</code></pre><h3 id="手动启动">手动启动 </h3>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token comment"># 安装依赖（如果需要）</span>
+pip <span class="token function">install</span> <span class="token parameter variable">-r</span> requirements-tmdb.txt
+
+<span class="token comment"># 启动（默认端口 8000）</span>
+python tmdb-renamer.py
+
+<span class="token comment"># 或指定端口</span>
+python tmdb-renamer.py <span class="token number">8080</span>
+</code></pre><h2 id="配置-api-密钥">配置 API 密钥 </h2>
+<ol>
+<li>访问 <code>http://localhost:8000</code></li>
+<li>在左侧"API 密钥配置"区域粘贴你的 TMDB API 密钥</li>
+<li>点"保存 API 密钥"</li>
+<li><strong>完成！现在可以使用了！</strong> ✨</li>
+</ol>
+<p><strong>获取 API 密钥：</strong> <a href="https://www.themoviedb.org/settings/api">https://www.themoviedb.org/settings/api</a> (免费)</p>
+<h2 id="第一个文件">第一个文件 </h2>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>步骤 1：输入文件名
+  → "Breaking Bad 01x01 Pilot.mkv"
+
+步骤 2：点"分析格式"
+  → 季号：1, 集号：1
+
+步骤 3：搜索电视剧
+  → "Breaking Bad"
+  → 选择 "Breaking Bad (2008)"
+
+步骤 4：查看预览
+  → "Breaking Bad - 1x01 - Pilot.mkv"
+
+步骤 5：执行重命名
+  → 完成！文件已重命名！
+</code></pre><p><strong>总耗时：2-3 分钟</strong></p>
+<hr>
+<h1 id="web界面完全指南">Web界面完全指南 </h1>
+<h2 id="界面布局">界面布局 </h2>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>┌──────────────────────────────────────────┐
+│  🎬 TMDB 电视剧文件智能重命名工具       │
+└──────────────────────────────────────────┘
+
+┌──────────────────┬──────────────────────┐
+│   左侧配置区     │    主内容区          │
+│                  │                      │
+│ 📋 API 密钥配置  │  [输入文件名]       │
+│ 📋 电视剧搜索    │  [分析格式]         │
+│ 📋 格式识别      │  [预览]             │
+│ 📋 自定义规则    │  [执行/取消]        │
+│ 📋 预览设置      │                      │
+└──────────────────┴──────────────────────┘
+</code></pre><h2 id="功能详解">功能详解 </h2>
+<h3 id="1️⃣-api-密钥配置">1️⃣ API 密钥配置 </h3>
+<p><strong>位置：</strong> 左侧上方</p>
+<p><strong>操作步骤：</strong></p>
+<ol>
+<li>在"TMDB API 密钥"输入框粘贴你的密钥</li>
+<li>点"保存 API 密钥"按钮</li>
+<li>看到绿色 ✅ 提示表示成功</li>
+</ol>
+<p><strong>获取密钥：</strong> <a href="https://www.themoviedb.org/settings/api">https://www.themoviedb.org/settings/api</a></p>
+<h3 id="2️⃣-电视剧搜索">2️⃣ 电视剧搜索 </h3>
+<p><strong>位置：</strong> 左侧中上</p>
+<p><strong>操作步骤：</strong></p>
+<ol>
+<li>在"电视剧名称"输入框输入要搜索的剧名</li>
+<li>点"搜索"按钮</li>
+<li>在搜索结果中选择你要的剧集</li>
+<li>点击结果项即可选中</li>
+</ol>
+<p><strong>注意：</strong> 搜索前必须先配置 API 密钥</p>
+<h3 id="3️⃣-文件名格式识别--核心功能">3️⃣ 文件名格式识别 ⭐ 核心功能 </h3>
+<p><strong>位置：</strong> 左侧中下</p>
+<p><strong>操作步骤：</strong></p>
+<p><strong>第一步：输入示例文件名</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>输入框：Breaking Bad 01x01 Pilot.mkv
+</code></pre><p><strong>第二步：点"分析格式"</strong></p>
+<ul>
+<li>程序自动识别季集号</li>
+<li>显示识别到的格式</li>
+<li>列出匹配的规则</li>
+</ul>
+<p><strong>第三步：如果没有自动识别</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>输入你的正则表达式：(\d{1,2})x(\d{1,2})
+点"测试正则"验证
+</code></pre><p><strong>第四步：文件名识别成功</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>✓ 季号：1
+✓ 集号：1
+✓ 格式：01x01
+</code></pre><p><strong>关键提示：</strong></p>
+<ul>
+<li>⚠️ <strong>必须包含 2 个捕获组</strong> - 第 1 个 = 季号，第 2 个 = 集号</li>
+<li>⚠️ 特殊符号需要转义 - <code>.</code> 要写成 <code>\.</code></li>
+</ul>
+<h3 id="4️⃣-自定义规则--关键创新">4️⃣ 自定义规则 🌟 关键创新 </h3>
+<p><strong>位置：</strong> 左侧下方"自定义规则"部分</p>
+<p><strong>为什么需要自定义规则？</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>问题：你的文件来自多个来源，格式不同
+  ├─ 网站 A：01x01 格式
+  ├─ 网站 B：[01] 01 格式
+  ├─ 网站 C：S01E01 格式
+  └─ 下载工具：01-01 格式
+
+解决：创建 4 条规则
+  ↓
+系统自动识别和应用
+  ↓
+完全自动化处理！
+</code></pre><p><strong>创建规则的两种方式：</strong></p>
+<p><strong>方式 1：通过"保存为规则"按钮（推荐）</strong></p>
+<ol>
+<li>在"测试正则"框输入正则表达式</li>
+<li>点"测试正则"验证成功</li>
+<li>点"保存为规则"</li>
+<li>输入规则名称（如"我的 01x01 格式"）</li>
+<li>点"确认保存"</li>
+</ol>
+<p><strong>方式 2：通过"新建规则"按钮</strong></p>
+<ol>
+<li>点"+ 新建规则"</li>
+<li>输入规则名称、正则、描述</li>
+<li>点"保存"</li>
+</ol>
+<p><strong>查看已保存的规则：</strong></p>
+<ul>
+<li>规则列表显示在左侧</li>
+<li>每条规则可以编辑、删除、启用/禁用</li>
+</ul>
+<h3 id="5️⃣-预览结果">5️⃣ 预览结果 </h3>
+<p><strong>位置：</strong> 主内容区右侧</p>
+<p><strong>显示内容：</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>原文件名：Breaking Bad 01x01 Pilot.mkv
+        ↓
+新文件名：Breaking Bad - 1x01 - Pilot.mkv ✓
+</code></pre><p><strong>操作：</strong></p>
+<ul>
+<li>点"执行重命名"确认并执行</li>
+<li>点"重新分析"修改参数重新分析</li>
+</ul>
+<h2 id="常见操作流程">常见操作流程 </h2>
+<h3 id="场景-1处理单个文件">场景 1：处理单个文件 </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>1. 输入文件名 → 分析格式
+2. 搜索电视剧 → 选择结果
+3. 查看预览 → 确认无误
+4. 执行重命名 → 完成！
+</code></pre><p><strong>耗时：2-3 分钟</strong></p>
+<h3 id="场景-2处理多个相同格式的文件">场景 2：处理多个相同格式的文件 </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>第一个文件：
+  1. 遇到新格式
+  2. 创建对应规则（5分钟）
+  3. 保存到配置
+
+后续文件：
+  1. 直接输入文件名
+  2. 程序自动识别（应用已保存的规则）
+  3. 自动匹配
+  4. 一键处理！
+</code></pre><p><strong>第一个文件：5 分钟 | 后续每个：30 秒 | 节省时间：&gt; 99%</strong></p>
+<h3 id="场景-3混合多种格式">场景 3：混合多种格式 </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>不同格式 → 规则库（3-5 条）→ 自动识别 → 自动处理
+</code></pre><hr>
+<h1 id="自定义规则完全指南">自定义规则完全指南 </h1>
+<h2 id="什么是自定义规则">什么是自定义规则？ </h2>
+<p><strong>规则 = 正则表达式</strong></p>
+<p>规则用来识别和提取文件名中的季号和集号。</p>
+<h2 id="规则的结构">规则的结构 </h2>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"规则的名称（如：01x01格式）"</span><span class="token punctuation">,</span>
+  <span class="token property">"pattern"</span><span class="token operator">:</span> <span class="token string">"正则表达式（如：(\\d{1,2})x(\\d{1,2})）"</span><span class="token punctuation">,</span>
+  <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"规则描述（可选，如：标准的##x##格式）"</span><span class="token punctuation">,</span>
+  <span class="token property">"enabled"</span><span class="token operator">:</span> <span class="token boolean">true</span> 或 <span class="token boolean">false</span>（是否启用）
+<span class="token punctuation">}</span>
+</code></pre><h2 id="正则表达式基础速成">正则表达式基础速成 </h2>
+<h3 id="关键符号速查">关键符号速查 </h3>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>()</code></td>
+<td><strong>捕获组</strong>（必须有 2 个！）</td>
+<td><code>(\d+)</code></td>
+</tr>
+<tr>
+<td><code>\d</code></td>
+<td>任意数字 [0-9]</td>
+<td><code>\d{1,2}</code> 匹配 1-2 位数字</td>
+</tr>
+<tr>
+<td><code>{1,2}</code></td>
+<td>重复次数 1 到 2 次</td>
+<td><code>\d{1,2}</code></td>
+</tr>
+<tr>
+<td><code>\s</code></td>
+<td>空白字符（空格、制表符等）</td>
+<td><code>\s*</code> 匹配 0 个或多个空格</td>
+</tr>
+<tr>
+<td><code>[...]</code></td>
+<td>字符集</td>
+<td><code>[a-zA-Z]</code> 匹配字母</td>
+</tr>
+<tr>
+<td><code>|</code></td>
+<td>或者</td>
+<td><code>S|s</code> 匹配 S 或 s</td>
+</tr>
+<tr>
+<td><code>.</code></td>
+<td>任意字符（除换行）</td>
+<td>通常需要转义 <code>\.</code></td>
+</tr>
+<tr>
+<td><code>^</code></td>
+<td>字符串开头</td>
+<td><code>^S01</code></td>
+</tr>
+<tr>
+<td><code>$</code></td>
+<td>字符串末尾</td>
+<td><code>E01$</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="必须记住2-个捕获组">必须记住：2 个捕获组 </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>✅ 正确：   (\d{1,2})x(\d{1,2})
+           第 1 组(季)  第 2 组(集)
+
+❌ 错误：   \d{1,2}x\d{1,2}        → 没有括号！
+❌ 错误：   (\d{1,2})               → 只有 1 个括号！
+❌ 错误：   (\d{1,2})-(\d{1,2})-(\d{1,2}) → 3 个括号！
+</code></pre><h2 id="常见文件格式和规则">常见文件格式和规则 </h2>
+<h3 id="格式-101x01">格式 1：01x01 </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>文件名示例：Breaking Bad 01x01 Pilot.mkv
+正则表达式：(\d{1,2})x(\d{1,2})
+规则名称：01x01 格式
+</code></pre><h3 id="格式-2s01e01">格式 2：S01E01 </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>文件名示例：Breaking Bad S01E01 Pilot.mkv
+正则表达式：[Ss](\d{1,2})[Ee](\d{1,2})
+规则名称：S##E##标准格式
+</code></pre><h3 id="格式-301-01动画格式">格式 3：[01] 01（动画格式） </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>文件名示例：[Anime] Title [01] 01 Title.mkv
+正则表达式：[\[\(]\s*(\d{1,2})\s*[\]\)]\s*(\d{1,2})
+规则名称：动画 [##] ## 格式
+说明：支持 [01] 或 (01) 两种括号
+</code></pre><h3 id="格式-40101">格式 4：01.01 </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>文件名示例：Breaking Bad 01.01 Pilot.mkv
+正则表达式：(\d{1,2})\.(\d{1,2})
+规则名称：点号格式
+</code></pre><h3 id="格式-501-01">格式 5：01-01 </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>文件名示例：Breaking Bad 01-01 Pilot.mkv
+正则表达式：(\d{1,2})-(\d{1,2})
+规则名称：连字号格式
+</code></pre><h2 id="快速规则创建步骤">快速规则创建步骤 </h2>
+<h3 id="步骤-1识别你的文件格式">步骤 1：识别你的文件格式 </h3>
+<p>看你的实际文件名，找出季集号的规律：</p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>文件名：Series S02E05 Title.mkv
+         ↑      ↑     ↑
+      名称  S##E##  标题
+
+格式类型：S##E##
+</code></pre><h3 id="步骤-2在常见格式表中找到对应规则">步骤 2：在常见格式表中找到对应规则 </h3>
+<p>上面的"常见格式"表中找到同类的规则，复制正则表达式。</p>
+<h3 id="步骤-3测试规则">步骤 3：测试规则 </h3>
+<ol>
+<li>在 Web 界面的"自定义正则表达式"框粘贴正则</li>
+<li>在下方输入你的示例文件名</li>
+<li>点"测试正则"</li>
+<li>如果看到 ✅ 成功，说明规则可用</li>
+</ol>
+<h3 id="步骤-4保存规则">步骤 4：保存规则 </h3>
+<ol>
+<li>点"保存为规则"</li>
+<li>输入规则名称（如"我的 S##E## 格式"）</li>
+<li>（可选）添加描述</li>
+<li>点"确认保存"</li>
+</ol>
+<h3 id="步骤-5使用规则">步骤 5：使用规则 </h3>
+<p>规则自动保存到配置文件，之后：</p>
+<ul>
+<li>输入相同格式的文件名</li>
+<li>系统自动识别和应用规则</li>
+<li>自动提取季集号</li>
+</ul>
+<h2 id="规则管理">规则管理 </h2>
+<h3 id="查看已保存的规则">查看已保存的规则 </h3>
+<p>左侧"自定义规则"部分列出所有规则：</p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>自定义规则
+├─ ☑️ 01x01 格式
+├─ ☑️ S##E## 标准格式
+├─ ☑️ 动画 [##] ## 格式
+└─ ☑️ 点号格式
+</code></pre><h3 id="禁用规则">禁用规则 </h3>
+<p>点规则前的 ☑️ 复选框取消勾选，该规则就会被禁用，不再被应用。</p>
+<h3 id="编辑规则">编辑规则 </h3>
+<p>点规则名称可编辑规则的属性。</p>
+<h3 id="删除规则">删除规则 </h3>
+<p>点规则旁边的 🗑️ 按钮删除规则。</p>
+<h2 id="api-使用开发者高级用户">API 使用（开发者/高级用户） </h2>
+<h3 id="添加规则">添加规则 </h3>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token function">curl</span> <span class="token parameter variable">-X</span> POST http://localhost:8000/api/add-rule <span class="token punctuation">\</span>
+  <span class="token parameter variable">-H</span> <span class="token string">"Content-Type: application/json"</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">-d</span> <span class="token string">'{
+    "name": "01x01格式",
+    "pattern": "(\\d{1,2})x(\\d{1,2})",
+    "description": "标准的 ##x## 格式"
+  }'</span>
+</code></pre><p><strong>响应：</strong></p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"success"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+  <span class="token property">"message"</span><span class="token operator">:</span> <span class="token string">"规则已添加: 01x01格式"</span>
+<span class="token punctuation">}</span>
+</code></pre><h3 id="获取所有规则">获取所有规则 </h3>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token function">curl</span> http://localhost:8000/api/get-rules
+</code></pre><p><strong>响应：</strong></p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"rules"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"01x01格式"</span><span class="token punctuation">,</span>
+      <span class="token property">"pattern"</span><span class="token operator">:</span> <span class="token string">"(\\d{1,2})x(\\d{1,2})"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"标准的 ##x## 格式"</span><span class="token punctuation">,</span>
+      <span class="token property">"enabled"</span><span class="token operator">:</span> <span class="token boolean">true</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+</code></pre><h3 id="测试规则">测试规则 </h3>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token function">curl</span> <span class="token parameter variable">-X</span> POST http://localhost:8000/api/test-rule <span class="token punctuation">\</span>
+  <span class="token parameter variable">-H</span> <span class="token string">"Content-Type: application/json"</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">-d</span> <span class="token string">'{
+    "pattern": "(\\d{1,2})x(\\d{1,2})",
+    "test_string": "Breaking Bad 01x01.mkv"
+  }'</span>
+</code></pre><p><strong>成功响应：</strong></p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"success"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+  <span class="token property">"matched"</span><span class="token operator">:</span> <span class="token string">"01x01"</span><span class="token punctuation">,</span>
+  <span class="token property">"season"</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+  <span class="token property">"episode"</span><span class="token operator">:</span> <span class="token number">1</span>
+<span class="token punctuation">}</span>
+</code></pre><p><strong>失败响应：</strong></p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"success"</span><span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span>
+  <span class="token property">"error"</span><span class="token operator">:</span> <span class="token string">"正则表达式不匹配文本"</span>
+<span class="token punctuation">}</span>
+</code></pre><h3 id="更新规则">更新规则 </h3>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token function">curl</span> <span class="token parameter variable">-X</span> POST http://localhost:8000/api/update-rule <span class="token punctuation">\</span>
+  <span class="token parameter variable">-H</span> <span class="token string">"Content-Type: application/json"</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">-d</span> <span class="token string">'{
+    "name": "01x01格式",
+    "pattern": "新的正则表达式（可选）",
+    "description": "新的描述（可选）",
+    "enabled": true/false（可选）
+  }'</span>
+</code></pre><h3 id="删除规则-1">删除规则 </h3>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code><span class="token function">curl</span> <span class="token parameter variable">-X</span> POST http://localhost:8000/api/delete-rule <span class="token punctuation">\</span>
+  <span class="token parameter variable">-H</span> <span class="token string">"Content-Type: application/json"</span> <span class="token punctuation">\</span>
+  <span class="token parameter variable">-d</span> <span class="token string">'{"name": "规则名称"}'</span>
+</code></pre><hr>
+<h1 id="常见问题--故障排除">常见问题 &amp; 故障排除 </h1>
+<h2 id="启动和配置">启动和配置 </h2>
+<h3 id="q-启动时报错-modulenotfounderror">Q: 启动时报错 "ModuleNotFoundError" </h3>
+<p><strong>A:</strong> 安装缺失的依赖库</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>pip <span class="token function">install</span> <span class="token parameter variable">-r</span> requirements-tmdb.txt
+</code></pre><p>或手动安装：</p>
+<pre data-role="codeBlock" data-info="bash" class="language-bash bash"><code>pip <span class="token function">install</span> requests
+</code></pre><h3 id="q-访问-localhost8000-打不开">Q: 访问 localhost:8000 打不开 </h3>
+<p><strong>A:</strong> 检查以下几点：</p>
+<ol>
+<li>程序是否正确启动了？（看执行窗口有没有错误）</li>
+<li>是否在输入地址时用了正确的端口？</li>
+<li>防火墙是否阻止了连接？</li>
+</ol>
+<h3 id="q-api-密钥无效">Q: API 密钥无效 </h3>
+<p><strong>A:</strong> 检查：</p>
+<ul>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 密钥是否从官方来源复制：<a href="https://www.themoviedb.org/settings/api">https://www.themoviedb.org/settings/api</a></li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 是否有多余空格？</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 网络连接是否正常？</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 密钥是否过期？（在 TMDB 重新生成）</li>
+</ul>
+<h2 id="文件名识别">文件名识别 </h2>
+<h3 id="q-分析文件名时显示格式未识别">Q: 分析文件名时显示"格式未识别" </h3>
+<p><strong>A:</strong> 有两个原因，按顺序排查：</p>
+<p><strong>原因 1：你的格式不在内置规则中</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>解决：创建自定义规则
+  1. 在"自定义正则表达式"框输入你的格式对应的正则
+  2. 点"测试正则"验证
+  3. 点"保存为规则"永久保存
+  详见：【自定义规则完全指南】
+</code></pre><p><strong>原因 2：你的规则被禁用了</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>解决：启用规则
+  1. 查看左侧"自定义规则"列表
+  2. 找到对应的规则
+  3. 勾选 ☑️ 启用它
+</code></pre><h3 id="q-正则表达式测试失败">Q: 正则表达式测试失败 </h3>
+<p><strong>A:</strong> 99% 的原因是这 3 个问题：</p>
+<p><strong>问题 1：缺少捕获组 <code>()</code></strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>❌ 错误：\d{1,2}x\d{1,2}
+✅ 正确：(\d{1,2})x(\d{1,2})
+</code></pre><p><strong>问题 2：特殊符号未转义</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>❌ 错误：(\d.2)x(\d.2)        点号没转义！
+✅ 正确：(\d{1,2})x(\d{1,2})
+</code></pre><p><strong>问题 3：重复范围错误</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>❌ 错误：(\d{1-2})x(\d{1-2})   用了 - 代替 ,
+✅ 正确：(\d{1,2})x(\d{1,2})
+</code></pre><p><strong>检查清单：</strong></p>
+<ul>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 是否有 2 个 <code>()</code>？</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 特殊字符是否转义？（<code>.</code> → <code>\.</code>, <code>(</code> → <code>\(</code>, <code>[</code> → <code>\[</code>）</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 重复范围是否用逗号？（<code>{1,2}</code> 不是 <code>{1-2}</code>）</li>
+</ul>
+<h3 id="q-同一个文件测试成功但分析时失败">Q: 同一个文件测试成功，但分析时失败 </h3>
+<p><strong>A:</strong> 规则可能被禁用了。</p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>检查左侧"自定义规则"列表，确保 ☑️ 被勾选。
+</code></pre><h2 id="重命名相关">重命名相关 </h2>
+<h3 id="q-我担心文件会被破坏">Q: 我担心文件会被破坏 </h3>
+<p><strong>A:</strong> 不用担心！有 3 层保护：</p>
+<p><strong>保护 1：预览功能</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>执行重命名前，总会显示预览结果。
+你可以看到新文件名，确认无误後再执行。
+</code></pre><p><strong>保护 2：干运行模式（dry-run）</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>配置文件中设置 "behavior.dry_run": true
+程序会显示结果但不实际重命名。
+</code></pre><p><strong>保护 3：自动备份</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>重命名前，原文件会自动备份。
+即使出错也能恢复。
+</code></pre><h3 id="q-能否处理多个文件">Q: 能否处理多个文件？ </h3>
+<p><strong>A:</strong> 支持两种方式：</p>
+<p><strong>方式 1：逐个处理（安全，推荐）</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>对每个文件：输入 → 分析 → 预览 → 执行
+优点：可以逐个检查，安全可靠
+</code></pre><p><strong>方式 2：批量处理</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>配置中启用 "behavior.batch_mode": true
+输入文件夹路径 → 程序自动处理所有匹配的文件
+优点：速度快，适合大量文件
+</code></pre><h2 id="性能和体验">性能和体验 </h2>
+<h3 id="q-处理速度慢吗">Q: 处理速度慢吗？ </h3>
+<p><strong>A:</strong> 非常快！</p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>单个文件处理：&lt; 2 秒
+批量处理：&lt; 100ms/个文件
+TMDB 查询：1-5 秒（取决于网络）
+
+整体：完全可以接受
+</code></pre><h3 id="q-支持多少文件">Q: 支持多少文件？ </h3>
+<p><strong>A:</strong> 理论上没有限制，实际取决于你的网络和硬盘速度。</p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>测试结果：
+- 100 个文件：&lt; 1 分钟
+- 1000 个文件：5-10 分钟
+</code></pre><h3 id="q-可以用在生产环境吗">Q: 可以用在生产环境吗？ </h3>
+<p><strong>A:</strong> 可以！代码质量达到生产级别。</p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>✅ 完整的错误处理
+✅ 安全的文件操作
+✅ 详尽的日志记录
+✅ 预览机制确保安全
+</code></pre><hr>
+<h1 id="配置参考">配置参考 </h1>
+<h2 id="配置文件位置">配置文件位置 </h2>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>./config/config.conf
+</code></pre><h2 id="配置文件结构">配置文件结构 </h2>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"api"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"key"</span><span class="token operator">:</span> <span class="token string">"你的 TMDB API 密钥（首次自动创建）"</span><span class="token punctuation">,</span>
+    <span class="token property">"language"</span><span class="token operator">:</span> <span class="token string">"zh-CN（中文）或 en-US（英文）"</span><span class="token punctuation">,</span>
+    <span class="token property">"timeout"</span><span class="token operator">:</span> <span class="token number">10</span>（API 超时时间秒数）
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  
+  <span class="token property">"naming"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"include_episode_name"</span><span class="token operator">:</span> <span class="token boolean">true</span>（是否包含集名称）<span class="token punctuation">,</span>
+    <span class="token property">"episode_separator"</span><span class="token operator">:</span> <span class="token string">"-"</span>（集号前的分隔符）<span class="token punctuation">,</span>
+    <span class="token property">"format_style"</span><span class="token operator">:</span> <span class="token string">"standard"</span>（输出格式风格）
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  
+  <span class="token property">"behavior"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"dry_run"</span><span class="token operator">:</span> <span class="token boolean">false</span>（<span class="token boolean">true</span> = 仅显示结果不执行）<span class="token punctuation">,</span>
+    <span class="token property">"interactive"</span><span class="token operator">:</span> <span class="token boolean">true</span>（真实交互模式）<span class="token punctuation">,</span>
+    <span class="token property">"batch_mode"</span><span class="token operator">:</span> <span class="token boolean">false</span>（<span class="token boolean">false</span> = 逐个处理，<span class="token boolean">true</span> = 批量处理）
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  
+  <span class="token property">"rules"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"custom"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+      <span class="token punctuation">{</span>
+        <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"规则名称"</span><span class="token punctuation">,</span>
+        <span class="token property">"pattern"</span><span class="token operator">:</span> <span class="token string">"正则表达式"</span><span class="token punctuation">,</span>
+        <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"描述"</span><span class="token punctuation">,</span>
+        <span class="token property">"enabled"</span><span class="token operator">:</span> <span class="token boolean">true</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">]</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre><h2 id="配置参数详解">配置参数详解 </h2>
+<h3 id="api-部分-api">API 部分 <code>api</code> </h3>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>key</code></td>
+<td>TMDB API 密钥</td>
+<td><code>abc123def456...</code></td>
+</tr>
+<tr>
+<td><code>language</code></td>
+<td>API 返回数据的语言代码</td>
+<td><code>zh-CN</code> 或 <code>en-US</code></td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td>API 请求超时时间（秒）</td>
+<td><code>10</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="命名部分-naming">命名部分 <code>naming</code> </h3>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>可选值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>include_episode_name</code></td>
+<td>是否在重命名中包含集的名称</td>
+<td><code>true</code> / <code>false</code></td>
+</tr>
+<tr>
+<td><code>episode_separator</code></td>
+<td>集号前的分隔符</td>
+<td><code>-</code> / <code> </code> / <code>_</code> 等</td>
+</tr>
+<tr>
+<td><code>format_style</code></td>
+<td>输出格式</td>
+<td><code>standard</code> 或自定义</td>
+</tr>
+</tbody>
+</table>
+<h3 id="行为部分-behavior">行为部分 <code>behavior</code> </h3>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dry_run</code></td>
+<td>干运行模式，仅显示结果不实际操作</td>
+<td>调试时设为 <code>true</code></td>
+</tr>
+<tr>
+<td><code>interactive</code></td>
+<td>是否进行交互式确认</td>
+<td>通常保持 <code>true</code></td>
+</tr>
+<tr>
+<td><code>batch_mode</code></td>
+<td>批量处理模式</td>
+<td><code>true</code> = 一次处理多个文件</td>
+</tr>
+</tbody>
+</table>
+<h3 id="自定义规则-rulescustom">自定义规则 <code>rules.custom</code> </h3>
+<p>这是一个数组，存储用户创建的所有规则。每条规则包含：</p>
+<ul>
+<li><code>name</code>：规则名称</li>
+<li><code>pattern</code>：正则表达式</li>
+<li><code>description</code>：描述（可选）</li>
+<li><code>enabled</code>：是否启用</li>
+</ul>
+<h2 id="配置修改建议">配置修改建议 </h2>
+<h3 id="场景-1测试不想损坏原文件">场景 1：测试（不想损坏原文件） </h3>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token property">"behavior"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+  <span class="token property">"dry_run"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>      <span class="token comment">// 只显示结果</span>
+  <span class="token property">"interactive"</span><span class="token operator">:</span> <span class="token boolean">true</span>   <span class="token comment">// 每步都确认</span>
+<span class="token punctuation">}</span>
+</code></pre><h3 id="场景-2大批量处理">场景 2：大批量处理 </h3>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token property">"behavior"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+  <span class="token property">"dry_run"</span><span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span>
+  <span class="token property">"batch_mode"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>      <span class="token comment">// 启用批量模式</span>
+  <span class="token property">"interactive"</span><span class="token operator">:</span> <span class="token boolean">false</span>     <span class="token comment">// 无需交互，自动处理</span>
+<span class="token punctuation">}</span>
+</code></pre><h3 id="场景-3获取英文电视剧信息">场景 3：获取英文电视剧信息 </h3>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token property">"api"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+  <span class="token property">"language"</span><span class="token operator">:</span> <span class="token string">"en-US"</span>
+<span class="token punctuation">}</span>
+</code></pre><hr>
+<h1 id="api-参考">API 参考 </h1>
+<h2 id="基础信息">基础信息 </h2>
+<ul>
+<li><strong>基址：</strong> <code>http://localhost:8000</code></li>
+<li><strong>格式：</strong> JSON</li>
+<li><strong>认证：</strong> 无（本地应用）</li>
+</ul>
+<h2 id="规则管理-api">规则管理 API </h2>
+<h3 id="1-获取所有规则">1. 获取所有规则 </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>GET /api/get-rules
+</code></pre><p><strong>响应示例：</strong></p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"rules"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"01x01格式"</span><span class="token punctuation">,</span>
+      <span class="token property">"pattern"</span><span class="token operator">:</span> <span class="token string">"(\\d{1,2})x(\\d{1,2})"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"标准的##x##格式"</span><span class="token punctuation">,</span>
+      <span class="token property">"enabled"</span><span class="token operator">:</span> <span class="token boolean">true</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">{</span>
+      <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"S##E##格式"</span><span class="token punctuation">,</span>
+      <span class="token property">"pattern"</span><span class="token operator">:</span> <span class="token string">"[Ss](\\d{1,2})[Ee](\\d{1,2})"</span><span class="token punctuation">,</span>
+      <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"标准的S##E##格式"</span><span class="token punctuation">,</span>
+      <span class="token property">"enabled"</span><span class="token operator">:</span> <span class="token boolean">true</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+</code></pre><h3 id="2-添加规则">2. 添加规则 </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>POST /api/add-rule
+Content-Type: application/json
+
+{
+  "name": "规则名称（必须）",
+  "pattern": "正则表达式（必须）",
+  "description": "规则描述（可选）"
+}
+</code></pre><p><strong>请求示例：</strong></p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"我的动画格式"</span><span class="token punctuation">,</span>
+  <span class="token property">"pattern"</span><span class="token operator">:</span> <span class="token string">"[\\[\\(]\\s*(\\d{1,2})\\s*[\\]\\)]\\s*(\\d{1,2})"</span><span class="token punctuation">,</span>
+  <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"匹配 [01] 01 或 (01) 01 格式"</span>
+<span class="token punctuation">}</span>
+</code></pre><p><strong>响应：</strong></p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"success"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+  <span class="token property">"message"</span><span class="token operator">:</span> <span class="token string">"规则已添加: 我的动画格式"</span>
+<span class="token punctuation">}</span>
+</code></pre><h3 id="3-测试规则">3. 测试规则 </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>POST /api/test-rule
+Content-Type: application/json
+
+{
+  "pattern": "正则表达式",
+  "test_string": "要测试的字符串"
+}
+</code></pre><p><strong>请求示例：</strong></p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"pattern"</span><span class="token operator">:</span> <span class="token string">"(\\d{1,2})x(\\d{1,2})"</span><span class="token punctuation">,</span>
+  <span class="token property">"test_string"</span><span class="token operator">:</span> <span class="token string">"Breaking Bad 01x01.mkv"</span>
+<span class="token punctuation">}</span>
+</code></pre><p><strong>成功响应：</strong></p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"success"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+  <span class="token property">"matched"</span><span class="token operator">:</span> <span class="token string">"01x01"</span><span class="token punctuation">,</span>
+  <span class="token property">"season"</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+  <span class="token property">"episode"</span><span class="token operator">:</span> <span class="token number">1</span>
+<span class="token punctuation">}</span>
+</code></pre><p><strong>失败响应：</strong></p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"success"</span><span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span>
+  <span class="token property">"error"</span><span class="token operator">:</span> <span class="token string">"正则表达式不匹配文本"</span>
+<span class="token punctuation">}</span>
+</code></pre><h3 id="4-更新规则">4. 更新规则 </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>POST /api/update-rule
+Content-Type: application/json
+
+{
+  "name": "规则名称（必须）",
+  "pattern": "新的正则表达式（可选）",
+  "description": "新的描述（可选）",
+  "enabled": true/false（可选）
+}
+</code></pre><p><strong>请求示例：</strong></p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"01x01格式"</span><span class="token punctuation">,</span>
+  <span class="token property">"pattern"</span><span class="token operator">:</span> <span class="token string">"(\\d{1,2})x(\\d{1,2})"</span><span class="token punctuation">,</span>
+  <span class="token property">"enabled"</span><span class="token operator">:</span> <span class="token boolean">false</span>
+<span class="token punctuation">}</span>
+</code></pre><h3 id="5-删除规则">5. 删除规则 </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>POST /api/delete-rule
+Content-Type: application/json
+
+{
+  "name": "规则名称"
+}
+</code></pre><p><strong>请求示例：</strong></p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"01x01格式"</span>
+<span class="token punctuation">}</span>
+</code></pre><p><strong>响应：</strong></p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"success"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+  <span class="token property">"message"</span><span class="token operator">:</span> <span class="token string">"规则已删除: 01x01格式"</span>
+<span class="token punctuation">}</span>
+</code></pre><h2 id="通用错误响应">通用错误响应 </h2>
+<p>所有 API 端点在出错时都返回以下格式：</p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"success"</span><span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span>
+  <span class="token property">"error"</span><span class="token operator">:</span> <span class="token string">"错误描述信息"</span>
+<span class="token punctuation">}</span>
+</code></pre><p><strong>常见错误：</strong></p>
+<table>
+<thead>
+<tr>
+<th>错误</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>正则表达式不匹配文本</td>
+<td>提供的正则没有正确匹配测试字符串</td>
+</tr>
+<tr>
+<td>规则名称不能为空</td>
+<td>发送请求时没有提供 name 字段</td>
+</tr>
+<tr>
+<td>正则表达式不能为空</td>
+<td>发送请求时没有提供 pattern 字段</td>
+</tr>
+<tr>
+<td>特定规则未找到</td>
+<td>尝试修改或删除不存在的规则</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h1 id="常用正则表达式速查">常用正则表达式速查 </h1>
+<p><strong>复制即用！记住：每个正则必须有 2 个 <code>()</code></strong></p>
+<h2 id="标准格式库">标准格式库 </h2>
+<h3 id="1-01x01-格式">1. 01x01 格式 </h3>
+<pre data-role="codeBlock" data-info="regex" class="language-regex regex"><code><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span>x<span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span>
+</code></pre><p><strong>匹配：</strong> <code>01x01</code> <code>1x5</code> <code>12x99</code> 等</p>
+<h3 id="2-s01e01-格式">2. S01E01 格式 </h3>
+<pre data-role="codeBlock" data-info="regex" class="language-regex regex"><code><span class="token char-class"><span class="token char-class-punctuation punctuation">[</span>Ss<span class="token char-class-punctuation punctuation">]</span></span><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span><span class="token char-class"><span class="token char-class-punctuation punctuation">[</span>Ee<span class="token char-class-punctuation punctuation">]</span></span><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span>
+</code></pre><p><strong>匹配：</strong> <code>S01E01</code> <code>s01e01</code> <code>S5E10</code> 等</p>
+<h3 id="3-01-01-或-01-01">3. [01] 01 或 (01) 01 </h3>
+<pre data-role="codeBlock" data-info="regex" class="language-regex regex"><code><span class="token char-class"><span class="token char-class-punctuation punctuation">[</span><span class="token special-escape escape">\[</span><span class="token special-escape escape">\(</span><span class="token char-class-punctuation punctuation">]</span></span><span class="token char-set class-name">\s</span><span class="token quantifier number">*</span><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span><span class="token char-set class-name">\s</span><span class="token quantifier number">*</span><span class="token char-class"><span class="token char-class-punctuation punctuation">[</span><span class="token special-escape escape">\]</span><span class="token special-escape escape">\)</span><span class="token char-class-punctuation punctuation">]</span></span><span class="token char-set class-name">\s</span><span class="token quantifier number">*</span><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span>
+</code></pre><p><strong>匹配：</strong> <code>[01] 01</code> <code>(01) 01</code> <code>[01]01</code> 等</p>
+<h3 id="4-0101-格式">4. 01.01 格式 </h3>
+<pre data-role="codeBlock" data-info="regex" class="language-regex regex"><code><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span><span class="token special-escape escape">\.</span><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span>
+</code></pre><p><strong>匹配：</strong> <code>01.01</code> <code>1.5</code> <code>12.99</code> 等</p>
+<h3 id="5-01-01-格式">5. 01-01 格式 </h3>
+<pre data-role="codeBlock" data-info="regex" class="language-regex regex"><code><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span>-<span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span>
+</code></pre><p><strong>匹配：</strong> <code>01-01</code> <code>1-5</code> <code>12-99</code> 等</p>
+<h3 id="6-单纯数字01-01含空格">6. 单纯数字：01 01（含空格） </h3>
+<pre data-role="codeBlock" data-info="regex" class="language-regex regex"><code><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span><span class="token char-set class-name">\s</span><span class="token quantifier number">+</span><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span>
+</code></pre><p><strong>匹配：</strong> <code>01 01</code> <code>1 5</code> <code>12  99</code> 等</p>
+<h3 id="7-单纯数字0101无分隔">7. 单纯数字：0101（无分隔） </h3>
+<pre data-role="codeBlock" data-info="regex" class="language-regex regex"><code><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{2}</span><span class="token group punctuation">)</span><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{2}</span><span class="token group punctuation">)</span>
+</code></pre><p><strong>匹配：</strong> <code>0101</code> <code>0505</code> <code>1299</code> 等<br>
+<strong>注意：</strong> 只能匹配固定 4 位数字</p>
+<h3 id="8-动画格式ep-01">8. 动画格式：Ep 01 </h3>
+<pre data-role="codeBlock" data-info="regex" class="language-regex regex"><code><span class="token char-class"><span class="token char-class-punctuation punctuation">[</span>Ee<span class="token char-class-punctuation punctuation">]</span></span>p<span class="token group punctuation">(?:</span>isode<span class="token group punctuation">)</span><span class="token quantifier number">?</span><span class="token char-set class-name">\s</span><span class="token quantifier number">*</span><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span><span class="token group punctuation">(?:</span><span class="token char-class"><span class="token char-class-punctuation punctuation">[</span>xX.-<span class="token char-class-punctuation punctuation">]</span></span><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span><span class="token group punctuation">)</span><span class="token quantifier number">?</span>
+</code></pre><p><strong>匹配：</strong> <code>Ep 01</code> <code>Episode 01</code> <code>EP01</code> 等</p>
+<h3 id="9-第-01-集格式中文">9. 第 01 集格式（中文） </h3>
+<pre data-role="codeBlock" data-info="regex" class="language-regex regex"><code>第<span class="token char-set class-name">\s</span><span class="token quantifier number">*</span><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span><span class="token char-set class-name">\s</span><span class="token quantifier number">*</span>季<span class="token char-set class-name">\s</span><span class="token quantifier number">*</span>第<span class="token quantifier number">?</span><span class="token char-set class-name">\s</span><span class="token quantifier number">*</span><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span>
+</code></pre><p><strong>匹配：</strong> <code>第01季第01集</code> <code>第1季第5集</code> 等</p>
+<h3 id="10-复杂混合格式">10. 复杂混合格式 </h3>
+<pre data-role="codeBlock" data-info="regex" class="language-regex regex"><code><span class="token char-class"><span class="token char-class-punctuation punctuation">[</span>Ss<span class="token char-class-punctuation punctuation">]</span></span><span class="token quantifier number">?</span><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span><span class="token char-class"><span class="token char-class-punctuation punctuation">[</span>Xx-<span class="token char-class-punctuation punctuation">]</span></span><span class="token group punctuation">(</span><span class="token char-class"><span class="token char-class-punctuation punctuation">[</span>Ee<span class="token char-class-punctuation punctuation">]</span></span><span class="token quantifier number">?</span><span class="token group punctuation">(</span><span class="token char-set class-name">\d</span><span class="token quantifier number">{1,2}</span><span class="token group punctuation">)</span><span class="token group punctuation">)</span><span class="token quantifier number">?</span>
+</code></pre><p><strong>匹配：</strong> <code>S01E01</code> <code>01x01</code> <code>s01-05</code> 等</p>
+<h2 id="复制粘贴的完整列表">复制粘贴的完整列表 </h2>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>01x01:                  (\d{1,2})x(\d{1,2})
+S01E01:                 [Ss](\d{1,2})[Ee](\d{1,2})
+[01] 01:                [\[\(]\s*(\d{1,2})\s*[\]\)]\s*(\d{1,2})
+01.01:                  (\d{1,2})\.(\d{1,2})
+01-01:                  (\d{1,2})-(\d{1,2})
+01 01:                  (\d{1,2})\s+(\d{1,2})
+0101:                   (\d{2})(\d{2})
+Ep 01:                  [Ee]p(?:isode)?\s*(\d{1,2})
+第01集（中文）:         第\s*(\d{1,2})\s*季\s*第?\s*(\d{1,2})
+</code></pre><hr>
+<h2 id="总结对比表">总结对比表 </h2>
+<table>
+<thead>
+<tr>
+<th>格式</th>
+<th>规则</th>
+<th>使用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>01x01</code></td>
+<td><code>(\d{1,2})x(\d{1,2})</code></td>
+<td>常见 BT / 下载工具</td>
+</tr>
+<tr>
+<td><code>S01E01</code></td>
+<td><code>[Ss](\d{1,2})[Ee](\d{1,2})</code></td>
+<td>标准西方电视格式</td>
+</tr>
+<tr>
+<td><code>[01] 01</code></td>
+<td><code>[\[\(]\s*(\d{1,2})\s*[\]\)]\s*(\d{1,2})</code></td>
+<td>日本动画</td>
+</tr>
+<tr>
+<td><code>01.01</code></td>
+<td><code>(\d{1,2})\.(\d{1,2})</code></td>
+<td>某些东欧网站</td>
+</tr>
+<tr>
+<td><code>01-01</code></td>
+<td><code>(\d{1,2})-(\d{1,2})</code></td>
+<td>某些下载工具</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="最佳实践">最佳实践 </h2>
+<h3 id="-推荐做法">✅ 推荐做法 </h3>
+<ol>
+<li>
+<p><strong>简单可靠的规则优于复杂规则</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>好：(\d{1,2})x(\d{1,2})
+不好：[\d]{1,2}[xX]{1}[\d]{1,2}(太复杂)
+</code></pre></li>
+<li>
+<p><strong>为相似的格式声明多条规则</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>格式：S01E01 和 s01e01
+做法：创建一条 [Ss](\d{1,2})[Ee](\d{1,2})
+     而不是 (\d{1,2})x(\d{1,2}) 和 ...
+</code></pre></li>
+<li>
+<p><strong>给规则取清晰的名字</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>好：S##E##标准格式、国内BT网格式、日本动画格式
+不好：规则1、规则2、regex123
+</code></pre></li>
+</ol>
+<h3 id="-容易出错">❌ 容易出错 </h3>
+<ol>
+<li>❌ 忘记捕获组：<code>\d{1,2}x\d{1,2}</code> → 会失败！</li>
+<li>❌ 3 个或更多捕获组 → 多的会被忽略</li>
+<li>❌ 特殊字符未转义：<code>.</code> 应写成 <code>\.</code></li>
+<li>❌ 过度复杂化规则 → 难以维护</li>
+</ol>
+<hr>
+<h1 id="快速速查卡片">快速速查卡片 </h1>
+<h2 id="3-秒钟解决的问题">3 秒钟解决的问题 </h2>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>答案</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>怎样启动？</td>
+<td>Windows 双击 <code>快速启动.bat</code>；Linux 运行 <code>bash 快速启动.sh</code></td>
+</tr>
+<tr>
+<td>去哪儿获取 API 密钥？</td>
+<td><a href="https://www.themoviedb.org/settings/api">https://www.themoviedb.org/settings/api</a> (免费)</td>
+</tr>
+<tr>
+<td>我的格式不匹配？</td>
+<td>创建自定义规则（见自定义规则完全指南）</td>
+</tr>
+<tr>
+<td>正则表达式怎么写？</td>
+<td>看"常用正则表达式速查"部分，复制即用</td>
+</tr>
+<tr>
+<td>有多少个文件时会卡?</td>
+<td>不卡！支持 1000+ 文件批量处理</td>
+</tr>
+<tr>
+<td>文件会被破坏吗？</td>
+<td>不会！有预览、干运行、备份三层保护</td>
+</tr>
+<tr>
+<td>能用在生产环境吗？</td>
+<td>可以！代码质量达到生产级别</td>
+</tr>
+</tbody>
+</table>
+<h2 id="操作速查">操作速查 </h2>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>分析文件        输入文件名 → 点"分析格式"
+创建规则        输入正则 → 点"测试正则" → 点"保存为规则"
+删除规则        点规则旁的 🗑️ 按钮
+禁用规则        取消勾选规则前的 ☑️
+启用规则        勾选规则前的 ☑️
+执行重命名      点"执行重命名"按钮
+</code></pre><h2 id="关键数字">关键数字 </h2>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>启动时间：&lt; 2 秒
+单个文件处理：&lt; 100ms
+API 查询：1-5 秒
+批量 1000 个文件：5-10 分钟
+</code></pre><hr>
+<h1 id="索引和快速链接">索引和快速链接 </h1>
+<ul>
+<li><a href="#3%E5%88%86%E9%92%9F%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B">⚡ 3分钟快速开始</a> - 立即上手</li>
+<li><a href="#web%E7%95%8C%E9%9D%A2%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97">🖱️ Web界面完全指南</a> - UI 操作</li>
+<li><a href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E8%A7%84%E5%88%99%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97">📝 自定义规则完全指南</a> - 规则和 API</li>
+<li><a href="#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98--%E6%95%85%E9%9A%9C%E6%8E%92%E9%99%A4">❓ 常见问题 &amp; 故障排除</a> - 遇到问题看这里</li>
+<li><a href="#%E9%85%8D%E7%BD%AE%E5%8F%82%E8%80%83">🔧 配置参考</a> - 参数调整</li>
+<li><a href="#api-%E5%8F%82%E8%80%83">⚙️ API 参考</a> - REST API</li>
+<li><a href="#%E5%B8%B8%E7%94%A8%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E9%80%9F%E6%9F%A5">🔥 常用正则表达式速查</a> - 正则库</li>
+<li><a href="#%E5%BF%AB%E9%80%9F%E9%80%9F%E6%9F%A5%E5%8D%A1%E7%89%87">快速速查卡片</a> - 3 秒钟答案</li>
+<li><a href="#-%E5%BC%80%E5%8F%91%E8%B7%AF%E7%BA%BF%E5%9B%BE%E5%92%8C%E4%BC%98%E5%8C%96%E8%AE%A1%E5%88%92">🚀 开发路线图</a> - 界面优化规划</li>
+</ul>
+<hr>
+<h1 id="-开发路线图和优化计划">🚀 开发路线图和优化计划 </h1>
+<h2 id="界面优化-v20-规划">界面优化 v2.0 规划 </h2>
+<p><strong>当前进度：</strong> Phase 1 ✅ 完成 | Phase 2 计划中 | Phase 3 计划中 | Phase 4 计划中</p>
+<p><strong>完成时间轴：</strong></p>
+<ul>
+<li>✅ <strong>Phase 1（2026-01 ~ 2026-02）</strong> - 电视剧选择弹框
+<ul>
+<li>功能：3列弹框 + 多级选择 + 集名显示 + 搜索记录保留</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="-已实现特性">🎯 已实现特性 </h2>
+<h3 id="电视剧选择弹框--v11-新增">电视剧选择弹框 ✅ (v1.1 新增) </h3>
+<p><strong>设计原理：</strong> 3列设计 - 左列搜索结果 | 中列季份列表 | 右列集号详情</p>
+<p><strong>弹框设计：</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>┌─────────────────────────────────────────────────┐
+│ 电视剧选择 - Breaking Bad               [X 关闭] │
+├────────────────┬─────────────────┬──────────────┤
+│  电视剧列表    │   季份列表      │  详细信息    │
+│                │                 │              │
+│ ☑ Breaking Bad │ ☑ Season 1      │ Breaking Bad │
+│   (2008)       │ ☑ Season 2      │ (2008-2013) │
+│                │ ☑ Season 3      │              │
+│ ○ Better Call  │ ☑ Season 4      │ 第 1 季：    │
+│   Saul (2009)  │ ☑ Season 5      │ S0101 Pilot │
+│                │                 │ S0102 Cat's  │
+│                │                 │ S0103 And... │
+│ ○ ...          │                 │              │
+│                │                 │              │
+├────────────────┴─────────────────┴──────────────┤
+│ ✅ 确认选择  ✕ 取消                            │
+└─────────────────────────────────────────────────┘
+</code></pre><p><strong>功能特点：</strong></p>
+<ul>
+<li>左侧：搜索结果列表，显示名称和首映年份（隐藏ID）</li>
+<li>中间：当选中电视剧后显示季份列表</li>
+<li>右侧：显示已选季份的集号及每集的真实名称（自动从TMDB获取）</li>
+<li>智能：再次打开弹框时保留搜索词和结果列表（无需重新搜索）</li>
+<li>ID显示：仅在"已选择"部分显示TMDB ID</li>
+</ul>
+<hr>
+<p><strong>当前：</strong> 直接在左侧面板测试和保存规则<br>
+<strong>优化：</strong> 点击"分析格式"后弹出规则选择/编辑弹框</p>
+<p><strong>弹框设计：</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>┌────────────────────────────────────────────────────┐
+│ 文件名规则选择和编辑               [X 关闭]        │
+├─────────────────────┬──────────────────────────────┤
+│  已保存规则列表    │   规则详情和预览             │
+│                    │                              │
+│ ☑ 01x01 格式      │ 规则名称：                   │
+│   (\d{1,2})x¶    │ 🔖 01x01 格式                │
+│                    │                              │
+│ ☑ S##E## 格式     │ 正则表达式：                 │
+│   [Ss](\d{1,2})¶  │ 📝 (\d{1,2})x(\d{1,2})     │
+│                    │                              │
+│ ☑ 动画格式        │ 描述：                       │
+│   [\[\(]\s*¶      │ 标准的 ##x## 格式            │
+│                    │                              │
+│ + 新建规则        │ 测试文件名：                 │
+│                    │ 📝 Breaking Bad 01x01.mkv  │
+│                    │                              │
+│                    │ 预览结果：                   │
+│                    │ ✅ 识别成功                  │
+│                    │    季号：1                   │
+│                    │    集号：1                   │
+│                    │    生成文件名：              │
+│                    │    Breaking Bad - 1x01 ✓   │
+│                    │                              │
+├─────────────────────┴──────────────────────────────┤
+│ [编辑] [删除]  [保存规则]  ✅ 使用这个规则  ✕ 取消 │
+└────────────────────────────────────────────────────┘
+</code></pre><p><strong>功能特点：</strong></p>
+<p><strong>左侧：已保存规则列表</strong></p>
+<ul>
+<li>显示规则名称和正则表达式</li>
+<li>可快速选择已有规则</li>
+<li>复选框支持启用/禁用</li>
+<li>"+ 新建规则"按钮添加新规则</li>
+</ul>
+<p><strong>右侧：规则详情和预览</strong></p>
+<ul>
+<li>显示选中规则的完整信息（名称、正则、描述）</li>
+<li>输入框用于测试文件名</li>
+<li>实时预览匹配结果</li>
+<li>显示生成的重命名后文件名</li>
+</ul>
+<p><strong>智能功能（规则生成系统）</strong></p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>输入：实际改名后的文件名
+例如：Breaking Bad - 1x01 - Pilot.mkv
+
+系统智能分析并生成：
+{
+  "name": "Breaking Bad 格式",           // 智能提取电视剧名作为规则名
+  "pattern": "([A-Za-z0-9\\s-]*) - (\\d{1,2})x(\\d{1,2})",
+  "description": "识别到的格式：Series - SxE 格式"
+}
+</code></pre><p><strong>数据处理：</strong></p>
+<ul>
+<li>正则表达式测试在用户端完成</li>
+<li>使用 JavaScript 的 RegExp 对象</li>
+<li>支持实时预览</li>
+<li>所有操作不需要服务器交互（除了保存）</li>
+</ul>
+<hr>
+<h3 id="优化-3规则结构扩展">优化 3：规则结构扩展 </h3>
+<p><strong>当前规则结构：</strong></p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"规则名称"</span><span class="token punctuation">,</span>
+  <span class="token property">"pattern"</span><span class="token operator">:</span> <span class="token string">"正则表达式"</span><span class="token punctuation">,</span>
+  <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"描述"</span><span class="token punctuation">,</span>
+  <span class="token property">"enabled"</span><span class="token operator">:</span> <span class="token boolean">true</span>
+<span class="token punctuation">}</span>
+</code></pre><p><strong>新增字段：</strong></p>
+<pre data-role="codeBlock" data-info="json" class="language-json json"><code><span class="token punctuation">{</span>
+  <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"规则名称"</span><span class="token punctuation">,</span>
+  <span class="token property">"pattern"</span><span class="token operator">:</span> <span class="token string">"正则表达式"</span><span class="token punctuation">,</span>
+  <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"描述"</span><span class="token punctuation">,</span>
+  <span class="token property">"enabled"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+  <span class="token property">"example_input"</span><span class="token operator">:</span> <span class="token string">"原始文件名示例"</span><span class="token punctuation">,</span>
+  <span class="token property">"example_output"</span><span class="token operator">:</span> <span class="token string">"改名后的文件名示例"</span><span class="token punctuation">,</span>
+  <span class="token property">"tags"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"BT下载"</span><span class="token punctuation">,</span> <span class="token string">"美剧"</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  <span class="token property">"created_date"</span><span class="token operator">:</span> <span class="token string">"2024-01-01"</span><span class="token punctuation">,</span>
+  <span class="token property">"last_used"</span><span class="token operator">:</span> <span class="token string">"2024-02-28"</span><span class="token punctuation">,</span>
+  <span class="token property">"usage_count"</span><span class="token operator">:</span> <span class="token number">42</span>
+<span class="token punctuation">}</span>
+</code></pre><p><strong>新字段说明：</strong></p>
+<ul>
+<li><code>example_input</code>：用于规则说明的输入示例</li>
+<li><code>example_output</code>：改名后的文件名示例</li>
+<li><code>tags</code>：规则标签，便于分类和搜索</li>
+<li><code>created_date</code>：规则创建日期</li>
+<li><code>last_used</code>：最后使用时间</li>
+<li><code>usage_count</code>：使用次数</li>
+</ul>
+<p><strong>智能规则生成：</strong></p>
+<p>用户可以通过以下方式快速创建规则：</p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>方式 1：直接输入原始和改名后的文件名
+  输入1：Breaking Bad 01x01 Pilot.mkv
+  输入2：Breaking Bad - 1x01 - Pilot.mkv
+  → 系统自动推断规则和其他参数
+
+方式 2：通过规则编辑器手动创建
+  1. 输入规则名称
+  2. 编写正则表达式
+  3. 输入测试文件名和预期输出
+  4. 系统自动生成规则（包括 description 和其他元数据）
+</code></pre><hr>
+<h3 id="优化-4用户端数据处理">优化 4：用户端数据处理 </h3>
+<p><strong>目标：</strong> 减少服务器负担，提升响应速度</p>
+<p><strong>迁移到用户端的功能：</strong></p>
+<table>
+<thead>
+<tr>
+<th>功能</th>
+<th>当前</th>
+<th>优化后</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>正则表达式测试</td>
+<td>服务器</td>
+<td>用户端（JavaScript）</td>
+</tr>
+<tr>
+<td>TMDB 搜索结果处理</td>
+<td>服务器</td>
+<td>用户端（数据结构化）</td>
+</tr>
+<tr>
+<td>规则预览生成</td>
+<td>计划中</td>
+<td>用户端（实时预览）</td>
+</tr>
+<tr>
+<td>规则信息填充</td>
+<td>无</td>
+<td>用户端（自动填充）</td>
+</tr>
+<tr>
+<td>文件名分析</td>
+<td>计划中</td>
+<td>用户端（快速反应）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>JavaScript 增强功能列表：</strong></p>
+<pre data-role="codeBlock" data-info="javascript" class="language-javascript javascript"><code><span class="token comment">// 1. 正则表达式测试</span>
+<span class="token function">testRegex</span><span class="token punctuation">(</span>pattern<span class="token punctuation">,</span> testString<span class="token punctuation">)</span>
+  → <span class="token punctuation">{</span><span class="token literal-property property">success</span><span class="token operator">:</span> bool<span class="token punctuation">,</span> <span class="token literal-property property">matched</span><span class="token operator">:</span> str<span class="token punctuation">,</span> <span class="token literal-property property">season</span><span class="token operator">:</span> int<span class="token punctuation">,</span> <span class="token literal-property property">episode</span><span class="token operator">:</span> int<span class="token punctuation">}</span>
+
+<span class="token comment">// 2. TMDB 数据处理</span>
+<span class="token function">processTMDBSearchResults</span><span class="token punctuation">(</span>rawData<span class="token punctuation">)</span>
+  → 构建化的数据结构
+
+<span class="token comment">// 3. 规则预览</span>
+<span class="token function">previewRuleMatch</span><span class="token punctuation">(</span>pattern<span class="token punctuation">,</span> testString<span class="token punctuation">,</span> format<span class="token punctuation">)</span>
+  → 预览改名后的文件名
+
+<span class="token comment">// 4. 规则智能生成</span>
+<span class="token function">generateRuleFromExample</span><span class="token punctuation">(</span>inputFile<span class="token punctuation">,</span> outputFile<span class="token punctuation">)</span>
+  → 推断的规则对象
+
+<span class="token comment">// 5. 文件名分析</span>
+<span class="token function">analyzeFilename</span><span class="token punctuation">(</span>filename<span class="token punctuation">,</span> rules<span class="token punctuation">)</span>
+  → 识别季集号和适用规则
+</code></pre><hr>
+<h2 id="-开发进度">🚀 开发进度 </h2>
+<h3 id="-phase-1电视剧选择弹框-已完成---v11">✅ Phase 1：电视剧选择弹框 (已完成 - v1.1) </h3>
+<p><strong>完成状态：</strong> 2026 年 2 月 28 日</p>
+<p><strong>实现清单：</strong></p>
+<ul>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" checked=""> 3列弹框设计（搜索结果 | 季份列表 | 详细信息）</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" checked=""> TMDB 数据实时获取和处理</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" checked=""> 每集集名自动显示</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" checked=""> 搜索记录保留（再次打开弹框时保持）</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" checked=""> ID 隐藏优化（仅在"已选择"部分显示）</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" checked=""> 完整的多级日志跟踪</li>
+</ul>
+<hr>
+<h3 id="-phase-2文件名规则弹框-规划中">📋 Phase 2：文件名规则弹框 (规划中) </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>预计时间：2-3 星期
+工作量：较大
+影响：高（核心功能优化）
+</code></pre><p><strong>计划任务：</strong></p>
+<ul>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 设计规则选择弹框 HTML</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 实现规则列表和详情显示</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 编写正则测试逻辑（纯 JS）</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 实现规则预览功能</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 实现规则新建/编辑功能</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 集成到格式分析流程</li>
+</ul>
+<hr>
+<h3 id="-phase-3智能规则生成-计划中">💡 Phase 3：智能规则生成 (计划中) </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>预计时间：1-2 星期
+工作量：中等
+影响：中（提升易用性）
+</code></pre><p><strong>计划任务：</strong></p>
+<ul>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 设计规则生成算法</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 实现示例分析（输入/输出对比）</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 自动生成规则名称和描述</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 实现规则验证和确认流程</li>
+</ul>
+<hr>
+<h3 id="-phase-4用户端数据处理增强-计划中">⚡ Phase 4：用户端数据处理增强 (计划中) </h3>
+<pre data-role="codeBlock" data-info="" class="language-text"><code>时间：持续优化
+工作量：小
+影响：中（性能和响应速度）
+</code></pre><p><strong>计划任务：</strong></p>
+<ul>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 迁移正则表达式测试到 JS</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 优化文件名分析逻辑</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 实现缓存机制（已测试的规则）</li>
+<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox"> 性能优化</li>
+</ul>
+<hr>
+<h2 id="实现细节">实现细节 </h2>
+<h3 id="当前支持的优化">当前支持的优化 </h3>
+<p><strong>优化 2：规则弹框设计</strong></p>
+<p><strong>计划中的功能：</strong> 点击"分析格式"后弹出规则选择/编辑弹框，支持快速预览和编辑已保存的规则。</p>
+<p><strong>优化 3：规则结构扩展</strong></p>
+<p><strong>计划中的功能：</strong> 扩展规则结构，支持 <code>example_input</code>、<code>example_output</code>、<code>tags</code>、<code>usage_count</code> 等字段，便于规则管理和智能推荐。</p>
+<p><strong>优化 4：用户端数据处理</strong></p>
+<p><strong>计划中的功能：</strong> 将正则表达式测试、TMDB 数据处理、规则预览等功能迁移到用户端（JavaScript），减少服务器负担，提升响应速度。</p>
+<hr>
+<p><strong>完整系统，持续优化。感谢使用！</strong> ✅🎬</p>
+<pre data-role="codeBlock" data-info="" class="language-text"><code></code></pre></div>
+      </div>
+      
+      
+    
+    
+    
+    
+    
+    
+  
+    </body></html>

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMDB API 测试工具</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Courier New', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .main {
+            display: flex;
+            height: calc(100vh - 200px);
+            max-height: 600px;
+        }
+
+        .left {
+            flex: 0 0 35%;
+            padding: 20px;
+            background: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            overflow-y: auto;
+        }
+
+        .right {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .api-section {
+            margin-bottom: 20px;
+        }
+
+        .api-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .api-method {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .api-method.get {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .api-method.post {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .api-item {
+            padding: 10px;
+            margin: 8px 0;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .api-item:hover {
+            background: #e7effb;
+            border-color: #667eea;
+        }
+
+        .api-item-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .api-item-path {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            background: #5a6268;
+        }
+
+        .response-header {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .response-body {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .code-example {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .keyword { color: #66d9ef; }
+        .string { color: #e6db74; }
+        .function { color: #a1efe4; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 TMDB API 测试工具</h1>
+            <p>快速测试所有 API 接口 | 开发者调试工具</p>
+        </div>
+
+        <div class="main">
+            <!-- 左侧：API列表 -->
+            <div class="left">
+                <div class="api-section">
+                    <h3>🌐 查询接口</h3>
+                    <div class="api-item" onclick="selectApi('directory-tree')">
+                        <div class="api-item-name">
+                            <span class="api-method get">GET</span>
+                            目录树
+                        </div>
+                        <div class="api-item-path">/api/directory-tree</div>
+                    </div>
+                    <div class="api-item" onclick="selectApi('search-series')">
+                        <div class="api-item-name">
+                            <span class="api-method get">GET</span>
+                            搜索电视剧
+                        </div>
+                        <div class="api-item-path">/api/search-series?q=Breaking Bad</div>
+                    </div>
+                    <div class="api-item" onclick="selectApi('get-episodes')">
+                        <div class="api-item-name">
+                            <span class="api-method get">GET</span>
+                            获取剧集列表
+                        </div>
+                        <div class="api-item-path">/api/get-episodes?series_id=1396&season=1</div>
+                    </div>
+                    <div class="api-item" onclick="selectApi('preview-rename')">
+                        <div class="api-item-name">
+                            <span class="api-method get">GET</span>
+                            预览重命名
+                        </div>
+                        <div class="api-item-path">/api/preview-rename?filename=...</div>
+                    </div>
+                    <div class="api-item" onclick="selectApi('get-api-key')">
+                        <div class="api-item-name">
+                            <span class="api-method get">GET</span>
+                            获取API密钥状态
+                        </div>
+                        <div class="api-item-path">/api/get-api-key</div>
+                    </div>
+                </div>
+
+                <div class="api-section">
+                    <h3>📤 提交接口</h3>
+                    <div class="api-item" onclick="selectApi('save-api-key')">
+                        <div class="api-item-name">
+                            <span class="api-method post">POST</span>
+                            保存API密钥
+                        </div>
+                        <div class="api-item-path">/api/save-api-key</div>
+                    </div>
+                    <div class="api-item" onclick="selectApi('extract-format')">
+                        <div class="api-item-name">
+                            <span class="api-method post">POST</span>
+                            提取文件格式
+                        </div>
+                        <div class="api-item-path">/api/extract-format</div>
+                    </div>
+                    <div class="api-item" onclick="selectApi('rename-files')">
+                        <div class="api-item-name">
+                            <span class="api-method post">POST</span>
+                            执行重命名
+                        </div>
+                        <div class="api-item-path">/api/rename-files</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：测试表单和响应 -->
+            <div class="right">
+                <div id="formContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiConfigs = {
+            'directory-tree': {
+                name: '获取目录树',
+                method: 'GET',
+                path: '/api/directory-tree',
+                params: [],
+                description: '获取电视剧目录的完整树形结构'
+            },
+            'search-series': {
+                name: '搜索电视剧',
+                method: 'GET',
+                path: '/api/search-series',
+                params: [
+                    { name: 'q', type: 'text', required: true, placeholder: '电视剧名称（例：Breaking Bad）' }
+                ],
+                description: '在 TMDB 中搜索电视剧'
+            },
+            'get-episodes': {
+                name: '获取剧集列表',
+                method: 'GET',
+                path: '/api/get-episodes',
+                params: [
+                    { name: 'series_id', type: 'text', required: true, placeholder: '电视剧ID（例：1396）' },
+                    { name: 'season', type: 'text', required: false, placeholder: '季数（默认1）', default: '1' }
+                ],
+                description: '获取指定电视剧和季的所有剧集信息'
+            },
+            'preview-rename': {
+                name: '预览重命名',
+                method: 'GET',
+                path: '/api/preview-rename',
+                params: [
+                    { name: 'filename', type: 'text', required: true, placeholder: '原文件名（例：01x01.mkv）' },
+                    { name: 'series_name', type: 'text', required: true, placeholder: '电视剧名称（例：Breaking Bad）' },
+                    { name: 'series_id', type: 'text', required: false, placeholder: '电视剧ID（可选）' },
+                    { name: 'regex', type: 'text', required: false, placeholder: '自定义正则表达式（可选）' }
+                ],
+                description: '预览文件重命名结果'
+            },
+            'get-api-key': {
+                name: '获取API密钥状态',
+                method: 'GET',
+                path: '/api/get-api-key',
+                params: [],
+                description: '检查是否已保存 API 密钥'
+            },
+            'save-api-key': {
+                name: '保存API密钥',
+                method: 'POST',
+                path: '/api/save-api-key',
+                body: { api_key: '' },
+                params: [
+                    { name: 'api_key', type: 'password', required: true, placeholder: '输入TMDB API密钥' }
+                ],
+                description: '保存加密的 API 密钥'
+            },
+            'extract-format': {
+                name: '提取文件格式',
+                method: 'POST',
+                path: '/api/extract-format',
+                body: { example: '' },
+                params: [
+                    { name: 'example', type: 'text', required: true, placeholder: '示例文件名（例：Breaking Bad S01E01.mkv）' }
+                ],
+                description: '分析文件名格式，识别季集编号模式'
+            },
+            'rename-files': {
+                name: '执行重命名',
+                method: 'POST',
+                path: '/api/rename-files',
+                body: { files: [] },
+                params: [
+                    { name: 'files_json', type: 'textarea', required: true, placeholder: '[{"original_path":"/path/to/file.mkv","new_name":"NewName.mkv"}]' }
+                ],
+                description: '执行实际文件重命名操作'
+            }
+        };
+
+        function selectApi(apiKey) {
+            const config = apiConfigs[apiKey];
+            if (!config) return;
+
+            const form = document.getElementById('formContainer');
+            let html = `
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab(0)">📋 请求</button>
+                    <button class="tab" onclick="switchTab(1)">📊 响应</button>
+                </div>
+
+                <div class="tab-content active">
+                    <h2 style="margin-bottom: 15px;">${config.name}</h2>
+                    <p style="color: #666; margin-bottom: 15px; font-size: 13px;">${config.description}</p>
+                    
+                    <div class="form-group">
+                        <label>请求方法</label>
+                        <span class="api-method ${config.method.toLowerCase()}">${config.method}</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>接口路径</label>
+                        <input type="text" readonly value="${config.path}">
+                    </div>
+            `;
+
+            // 生成参数表单
+            if (config.params && config.params.length > 0) {
+                config.params.forEach(param => {
+                    if (param.type === 'textarea') {
+                        html += `
+                            <div class="form-group">
+                                <label>${param.name} ${param.required ? '*' : ''}</label>
+                                <textarea id="${param.name}" placeholder="${param.placeholder}"></textarea>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div class="form-group">
+                                <label>${param.name} ${param.required ? '*' : ''}</label>
+                                <input type="${param.type}" id="${param.name}" placeholder="${param.placeholder}" 
+                                       ${param.default ? `value="${param.default}"` : ''}>
+                            </div>
+                        `;
+                    }
+                });
+            }
+
+            html += `
+                    <button onclick="testApi('${apiKey}')">🚀 发送请求</button>
+                    <button class="secondary" onclick="showExample('${apiKey}')" style="margin-left: 10px;">📖 查看示例</button>
+                </div>
+
+                <div class="tab-content">
+                    <div id="response" class="loading">点击"发送请求"查看响应</div>
+                </div>
+            `;
+
+            form.innerHTML = html;
+        }
+
+        function switchTab(index) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            document.querySelectorAll('.tab')[index].classList.add('active');
+            document.querySelectorAll('.tab-content')[index].classList.add('active');
+        }
+
+        async function testApi(apiKey) {
+            const config = apiConfigs[apiKey];
+            const responseDiv = document.getElementById('response');
+
+            responseDiv.innerHTML = '<div class="loading"><div class="spinner"></div> 请求中...</div>';
+
+            try {
+                let url = config.path;
+                let options = { method: config.method };
+
+                if (config.method === 'GET') {
+                    // 构建查询参数
+                    const params = new URLSearchParams();
+                    config.params.forEach(param => {
+                        const value = document.getElementById(param.name)?.value;
+                        if (value) params.append(param.name, value);
+                    });
+                    if (params.toString()) url += '?' + params.toString();
+                } else if (config.method === 'POST') {
+                    // 构建POST body
+                    const body = {};
+                    config.params.forEach(param => {
+                        if (param.name === 'files_json') {
+                            try {
+                                body.files = JSON.parse(document.getElementById(param.name)?.value || '[]');
+                            } catch (e) {
+                                throw new Error(`Invalid JSON in files_json: ${e.message}`);
+                            }
+                        } else {
+                            const value = document.getElementById(param.name)?.value;
+                            if (value) body[param.name] = value;
+                        }
+                    });
+                    options.headers = { 'Content-Type': 'application/json' };
+                    options.body = JSON.stringify(body);
+                }
+
+                const response = await fetch(url, options);
+                const data = await response.json();
+
+                const statusClass = response.ok ? 'success' : 'error';
+                let html = `
+                    <div class="response-header">
+                        <span>HTTP ${response.status}</span>
+                        <span class="status-badge ${statusClass}">${response.ok ? '成功' : '失败'}</span>
+                    </div>
+                    <div class="response-body">${JSON.stringify(data, null, 2)}</div>
+                `;
+
+                responseDiv.innerHTML = html;
+            } catch (error) {
+                responseDiv.innerHTML = `
+                    <div class="response-header">
+                        <span class="status-badge error">错误</span>
+                    </div>
+                    <div class="response-body" style="color: #721c24;">${error.message}</div>
+                `;
+            }
+        }
+
+        function showExample(apiKey) {
+            const config = apiConfigs[apiKey];
+            // 这里可以显示代码示例
+            alert(`API示例:\n${config.method} ${config.path}\n\n详见API文档`);
+        }
+
+        // 初始化显示第一个API
+        selectApi('get-api-key');
+    </script>
+</body>
+</html>

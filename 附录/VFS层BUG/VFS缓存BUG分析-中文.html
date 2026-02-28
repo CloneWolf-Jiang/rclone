@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VFS 缓存层 BUG 分析 - 中文版</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'Microsoft YaHei'; line-height: 1.6; color: #333; background: #f8f9fa; padding: 40px 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 50px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h1 { font-size: 32px; color: #1a1a1a; margin-bottom: 10px; }
+        .subtitle { font-size: 13px; color: #666; margin-bottom: 30px; padding: 10px; background: #f5f5f5; border-left: 4px solid #2196F3; }
+        h2 { font-size: 22px; color: #1a1a1a; margin-top: 40px; margin-bottom: 15px; border-bottom: 2px solid #2196F3; padding-bottom: 8px; }
+        h3 { font-size: 16px; color: #2c3e50; margin-top: 20px; margin-bottom: 12px; }
+        h4 { font-size: 14px; color: #34495e; margin-top: 12px; margin-bottom: 8px; font-weight: 600; }
+        p { margin-bottom: 12px; font-size: 13px; line-height: 1.7; }
+        code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-family: 'Courier New'; font-size: 12px; }
+        .code-block { background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 4px; margin: 12px 0; font-family: 'Courier New'; font-size: 12px; line-height: 1.4; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
+        .bug-item { background: #fafafa; padding: 20px; margin: 25px 0; border-radius: 4px; border-left: 4px solid #ff9800; }
+        .bug-fixed { border-left-color: #4CAF50; background: #f1f8f5; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 15px; font-size: 11px; font-weight: 600; margin-bottom: 10px; }
+        .badge-fixed { background: #e8f5e9; color: #2e7d32; }
+        .badge-pending { background: #fff3e0; color: #e65100; }
+        .info-box { padding: 15px; margin: 15px 0; border-radius: 4px; border-left: 4px solid; font-size: 13px; }
+        .info-danger { background: #ffebee; border-left-color: #f44336; }
+        .info-success { background: #e8f5e9; border-left-color: #4CAF50; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12px; }
+        table th { background: #f5f5f5; padding: 10px; text-align: left; border-bottom: 2px solid #ddd; font-weight: 600; }
+        table td { padding: 10px; border-bottom: 1px solid #e0e0e0; }
+        ul, ol { margin-left: 18px; margin-bottom: 12px; font-size: 13px; }
+        li { margin-bottom: 6px; }
+        .footer { text-align: right; font-size: 11px; color: #999; margin-top: 40px; padding-top: 15px; border-top: 1px solid #eee; }
+    </style>
+</head>
+<body>
+<div class="container">
+<h1>🐛 VFS 缓存层 BUG 分析报告</h1>
+<div class="subtitle">rclone VFS 缓存层问题汇总 | 日期: 2026-02-23 | 版本: v1.0 | 中文版本</div>
+
+<h2>📋 BUG 列表总览</h2>
+
+<div class="bug-item bug-pending">
+<h3>BUG #1: Premature EOF 导致无限重试 <span class="badge badge-pending">待修复</span></h3>
+<h4>问题简述</h4>
+<p>后端文件被删除后，客户端 Seek 操作触发频繁 EOF 错误。FUSE 缓存仍保留原文件大小，读取返回 EOF 但位置 &lt; 预期大小，导致重试不中断，每秒产生 10+ 日志行。</p>
+<h4>现有逻辑</h4>
+<p><strong>文件</strong>: vfs/read.go 行 306-313 的 ReadFileHandle.readAt()</p>
+<div class="code-block">if err == io.EOF {
+    if newOffset == fh.size || fh.sizeUnknown {
+        break  // 正常 EOF
+    }
+    // 条件不满足 → 无限重试
+}</div>
+<h4>导致 BUG 原因</h4>
+<p>预期大小 (fh.size) 是 VFS 缓存在内存中的旧值。当后端对象删除后，磁盘上读取返回 EOF，但 EOF 位置 (newOffset=0) 远小于缓存的 fh.size。break 条件永不成立，导致循环体持续执行。</p>
+<h4>触发场景</h4>
+<ul>
+<li>Jellyfin/Plex 客户端进行 Seek 操作</li>
+<li>后端对象由于任何原因不可访问（删除、路径变更等）</li>
+<li>FUSE 缓存未及时更新（poll-interval 导致延迟）</li>
+</ul>
+<h4>建议修改</h4>
+<p>在 vfs/read.go 中添加 premature EOF 检测：</p>
+<div class="code-block">if err == io.EOF {
+    if newOffset == fh.size || fh.sizeUnknown {
+        break  // 正常：已读到预期位置
+    } else if newOffset > 0 && newOffset < fh.size {
+        // Premature EOF：文件中间出现 EOF
+        // 可能原因：后端对象不可用、连接断开等
+        break  // 立即中止重试
+    }
+}</div>
+<h4>实际修改</h4>
+<p>暂未在主分支实施（需等待 libfuse 3.18.1 升级效果验证）</p>
+<h4>相关日志示例</h4>
+<p>问题特征日志:</p>
+<div class="code-block">2026/02/23 16:14:20 DEBUG : stream rw.Read nn=0, err=EOF
+2026/02/23 16:14:21 DEBUG : stream rw.Read nn=0, err=EOF
+2026/02/23 16:14:21 DEBUG : stream rw.Read nn=0, err=EOF
+... (每秒 10+ 条)</div>
+</div>
+
+<div class="bug-item bug-fixed">
+<h3>BUG #2: 父目录删除后仍然上传 <span class="badge badge-fixed">已修复</span></h3>
+<h4>问题简述</h4>
+<p>后端目录被删除后，VFS 缓存中的文件仍尝试上传。上传(.partial)成功但重命名失败（"object not found"），导致无限重试。缓存项永远无法标记为干净，占用磁盘和内存。</p>
+<h4>现有逻辑</h4>
+<p><strong>文件</strong>: vfs/vfscache/item.go 行 590-620 的 _store() 方法</p>
+<div class="code-block">// 直接尝试上传，不验证父目录
+cacheObj, err := item.c.fcache.NewObject(ctx, item.name)
+// ...
+o, err = operations.Copy(ctx, item.c.fremote, o, name, cacheObj)
+// Copy 成功但 Move(.partial → final) 失败</div>
+<h4>导致 BUG 原因</h4>
+<p>VFS cache 层假设父目录始终存在。当后端目录被删除时：</p>
+<ol>
+<li>PUT 上传成功（创建临时文件）：HTTP 200</li>
+<li>Move 操作失败：Alist 返回 "object not found"（父目录消失）</li>
+<li>VFS 标记为脏 (Dirty=true)，计划 5 分钟后重试</li>
+<li>文件永远无法标记为干净，缓存项累积</li>
+</ol>
+<h4>触发场景</h4>
+<div class="info-box info-danger">
+<strong>关键场景</strong>: 后端目录被删除 → Jellyfin Metadata 文件修改 → VFS 标记为脏 → 尝试上传
+<br><br>
+日志序列：
+<br>FindLeaf: 在 "/TV/斗破苍穹" 中未找到 "Season05"
+<br>Upload: HTTP 200 ✓
+<br>Move: failed to get src object: object not found ✗
+</div>
+<h4>建议修改（Plan A）</h4>
+<p>在 vfs/vfscache/item.go 中的 _store() 方法执行 operations.Copy() 之前，先检查父目录是否存在：</p>
+<div class="code-block">// 校验父目录存在，避免无效上传
+parentDir := path.Dir(item.name)
+if parentDir != "" && parentDir != "." {
+    _, dirErr := item.c.fremote.List(ctx, parentDir)
+    if dirErr == fs.ErrorDirNotFound {
+        // 父目录不存在→标记为干净→返回成功
+        item.info.Dirty = false
+        item._save()
+        return nil
+    } else if dirErr != nil {
+        return fmt.Errorf("check parent directory failed: %w", dirErr)
+    }
+}
+// 父目录存在→继续执行 operations.Copy()</div>
+<h4>代码变更</h4>
+<p><strong>修改前</strong>（原始Fork - 行590-620）：</p>
+<div class="code-block">if cacheObj != nil {
+    o, name := item.o, item.name
+    unlockMutexForCall(&item.mu, func() {
+        o, err = operations.Copy(ctx, item.c.fremote, o, name, cacheObj)
+    })
+    if err != nil {
+        if errors.Is(err, fs.ErrorCantUploadEmptyFiles) {
+            fs.Errorf(name, "Writeback failed: %v", err)
+            return nil
+        }
+        return fmt.Errorf("vfs cache: failed to transfer file: %w", err)
+    }
+}</div>
+
+<p><strong>修改后</strong>（最终版本 - 行600-634）：</p>
+<div class="code-block">if cacheObj != nil {
+    // 上传前检查父目录是否存在
+    parentDir := path.Dir(item.name)
+    if parentDir != "" && parentDir != "." {
+        _, dirErr := item.c.fremote.List(ctx, parentDir)
+        if dirErr == fs.ErrorDirNotFound {
+            fs.Infof(item.name, "vfs cache: skipping upload - parent directory '%s' not found on backend", parentDir)
+            item.info.Dirty = false
+            err = item._save()
+            if err != nil {
+                fs.Errorf(item.name, "vfs cache: failed to write metadata file: %v", err)
+            }
+            return nil
+        } else if dirErr != nil {
+            return fmt.Errorf("vfs cache: failed to check parent directory: %w", dirErr)
+        }
+    }
+
+    o, name := item.o, item.name
+    unlockMutexForCall(&item.mu, func() {
+        o, err = operations.Copy(ctx, item.c.fremote, o, name, cacheObj)
+    })
+    if err != nil {
+        if errors.Is(err, fs.ErrorCantUploadEmptyFiles) {
+            fs.Errorf(name, "Writeback failed: %v", err)
+            return nil
+        }
+        return fmt.Errorf("vfs cache: failed to transfer file from cache to remote: %w", err)
+    }
+}</div>
+<h4>实际修改</h4>
+<p><span class="badge badge-fixed">✅ 已在 vfs/vfscache/item.go 实施</span></p>
+<p>修改内容：</p>
+<ul>
+<li>添加 import "path"</li>
+<li>在 _store() 的 operations.Copy 前添加父目录检查</li>
+<li>若 ErrorDirNotFound，标记 Dirty=false 并返回成功</li>
+</ul>
+<p><strong>效果</strong>: 文件不再进入无限上传重试循环，RemoveNotInUse() 能最终清理缓存</p>
+<h4>相关日志示例</h4>
+<div class="code-block">// 修复前：无限重试
+2026/02/23 16:17:48 ERROR : failed to upload try #13, will retry in 5m0s
+2026/02/23 16:22:48 ERROR : failed to upload try #14, will retry in 5m0s
+...
+
+// 修复后：立即成功标记为干净
+2026/02/23 16:17:43 DEBUG : FindLeaf: 在 "/TV/斗破苍穹" 中未找到 "Season05"
+2026/02/23 16:17:43 INFO  : vfs cache: skipping upload - parent directory 'TV/斗破苍穹/Season05' not found
+2026/02/23 16:17:43 DEBUG : item marked clean, eligible for cache removal</div>
+</div>
+
+<h2>📊 修复状态总结</h2>
+<table>
+<tr><th>BUG</th><th>问题</th><th>状态</th><th>优先级</th><th>备注</th></tr>
+<tr><td>#1</td><td>Premature EOF</td><td>待修复</td><td>高</td><td>等待 libfuse 升级效果验证</td></tr>
+<tr><td>#2</td><td>父目录检查</td><td>已修复</td><td>高</td><td>2026-02-23 实施</td></tr>
+</table>
+
+<h2>🔍 下一步工作</h2>
+<ul>
+<li>验证 libfuse 3.18.1 升级对 EOF 错误的影响</li>
+<li>如果 EOF 错误仍存在，实施 BUG #1 的建议修改</li>
+<li>监控 BUG #2 修复的长期效果</li>
+<li>评估是否需要优化缓存清理策略</li>
+</ul>
+
+<div class="footer">
+<p>VFS 缓存层 BUG 分析报告 | v1.0 | 2026-02-23 | 中文版</p>
+</div>
+</div>
+</body>
+</html>
