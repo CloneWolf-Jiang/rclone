@@ -20,7 +20,7 @@
 
     --spacing-xs: 4px;
     --spacing-sm: 8px;
-    --spacing-md: 16px;
+    --spacing-md: 15.3px;
     --spacing-lg: 24px;
     --spacing-xl: 32px;
 
@@ -78,34 +78,37 @@ body {
     width: 340px;
     background: var(--light-color);
     border-right: 1px solid var(--border-color);
-    overflow-y: auto;
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
 }
 
 .panel-header {
     padding: var(--spacing-md);
     border-bottom: 1px solid var(--border-color);
     background: white;
+    flex-shrink: 0;
 }
 
 .panel-header h2 {
     font-size: 18px;
     color: var(--primary-color);
+    margin: 0;
 }
 
 .config-section {
     padding: var(--spacing-md);
     border-bottom: 1px solid var(--border-color);
     background: white;
-    margin: var(--spacing-sm);
+    margin: 4px;
     border-radius: var(--border-radius);
+    flex-shrink: 0;
 }
 
 .config-section h3 {
     font-size: 14px;
     color: var(--dark-color);
-    margin-bottom: var(--spacing-md);
+    margin: 0 0 var(--spacing-md) 0;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -119,9 +122,28 @@ body {
 .form-group label {
     display: block;
     margin-bottom: var(--spacing-sm);
-    font-size: 13px;
     font-weight: 600;
     color: var(--text-color);
+}
+
+.form-group-inline {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.form-group-inline label {
+    display: inline;
+    margin-bottom: 0;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.form-group-inline input,
+.form-group-inline select {
+    flex: 1;
+    min-width: 100px;
 }
 
 .form-control {

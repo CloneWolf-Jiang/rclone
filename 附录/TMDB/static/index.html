@@ -53,41 +53,22 @@
                     </div>
                 </div>
 
-                <!-- 文件名格式设置 -->
+                <!-- Phase 2 规则管理 -->
                 <div class="config-section">
-                    <h3>文件名格式识别</h3>
-                    <div class="form-group">
-                        <label for="exampleFilename">示例文件名:</label>
-                        <input type="text" id="exampleFilename" class="form-control" 
-                               placeholder="例: Breaking Bad S01E01.mkv">
+                    <h3>⚙️ Phase 2 规则管理</h3>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
+                        使用模板系统实现更灵活的文件名规则
+                    </p>
+                    <button id="openPhase2RulesBtn" class="btn btn-primary btn-block">⚙️ 设置规则</button>
+                    <div id="phase2Status" class="status-message" style="margin-top: 10px; font-size: 12px;">
+                        状态: 检测中...
                     </div>
-                    <button id="analyzeFormat" class="btn btn-default btn-block">分析格式</button>
-                    
-                    <div id="formatAnalysis" class="format-analysis" style="display: none;">
-                        <h4>识别到的格式:</h4>
-                        <div id="detectedPatterns"></div>
-                        <div class="form-group">
-                            <label for="customRegex">自定义正则表达式:</label>
-                            <input type="text" id="customRegex" class="form-control" 
-                                   placeholder="例: [Ss](\d{1,2})[Ee](\d{1,2})">
-                            <small class="text-muted">必须包含2个捕获组：第1组为季号，第2组为集号</small>
-                        </div>
-                        <button id="testRegex" class="btn btn-small" style="margin-top: 5px;">测试正则</button>
-                        <button id="saveAsRule" class="btn btn-small btn-success" style="margin-top: 5px;">保存为规则</button>
-                    </div>
-                </div>
-
-                <!-- 自定义规则管理 -->
-                <div class="config-section">
-                    <h3>自定义规则</h3>
-                    <div id="rulesList" class="rules-list"></div>
-                    <button id="addRuleBtn" class="btn btn-small btn-success btn-block">+ 新建规则</button>
                 </div>
 
                 <!-- 预览设置 -->
                 <div class="config-section">
                     <h3>预览设置</h3>
-                    <div class="form-group">
+                    <div class="form-group-inline">
                         <label for="previewCount">预览文件数:</label>
                         <input type="number" id="previewCount" class="form-control" 
                                value="5" min="1" max="100">
@@ -234,6 +215,208 @@
         </div>
     </div>
 
+    <!-- 模态框：Phase 2 规则管理 -->
+    <div id="phase2RulesModal" class="modal phase2-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);">
+        <div class="modal-content phase2-modal-content" style="position: fixed; top: 50px; left: calc(50% - 700px); max-width: 1400px; height: 85vh; display: flex; flex-direction: column; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+            <div class="modal-header" style="cursor: grab; user-select: none; background: #f8f9fa; padding: 12px; border-radius: 4px 4px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0;">⚙️ Phase 2 规则管理系统</h2>
+                <div style="display: flex; gap: 8px;">
+                    <button id="phase2RulesClose" class="btn btn-default" style="padding: 6px 12px; font-size: 13px;">关闭</button>
+                    <button id="phase2ConfirmRules" class="btn btn-primary" style="padding: 6px 12px; font-size: 13px;">✓ 确认规则</button>
+                </div>
+            </div>
+            
+            <!-- 主体容器：左中右三列布局 -->
+            <div class="modal-body phase2-modal-body" style="display: flex; gap: 12px; flex: 1; overflow: hidden; padding: 12px;">
+                
+                <!-- 左列：分类列表 (18%) -->
+                <div id="phase2LeftPanel" class="phase2-panel" style="flex: 0 0 18%; display: flex; flex-direction: column; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; background: #f9f9f9; cursor: auto;">
+                    <div style="padding: 12px; flex: 1; overflow-y: auto; display: flex; flex-direction: column;">
+                        <h4 style="margin: 0 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid #0066cc; font-size: 14px;">📂 规则分类</h4>
+                        
+                        <!-- 新增分类编辑区（初始隐藏） -->
+                        <div id="phase2AddCategoryEditor" style="display: none; margin-bottom: 12px; padding: 10px; background: #fff; border: 2px solid #0066cc; border-radius: 4px; gap: 8px; flex-direction: column;">
+                            <input type="text" id="phase2NewCategoryName" class="form-control" 
+                                   placeholder="输入新分类名称（例：国剧、日剧、美剧等）" 
+                                   style="font-size: 12px; padding: 6px; margin-bottom: 8px;">
+                            <div style="display: flex; gap: 6px;">
+                                <button id="phase2ConfirmAddCategory" class="btn btn-primary" style="font-size: 11px; padding: 4px 8px; flex: 1;">✓ 确定</button>
+                                <button id="phase2CancelAddCategory" class="btn btn-default" style="font-size: 11px; padding: 4px 8px; flex: 1;">✕ 取消</button>
+                            </div>
+                        </div>
+                        
+                        <!-- 编辑分类编辑区（初始隐藏） -->
+                        <div id="phase2EditCategoryEditor" style="display: none; margin-bottom: 12px; padding: 10px; background: #fffacd; border: 2px solid #ff9900; border-radius: 4px; gap: 8px; flex-direction: column;">
+                            <input type="text" id="phase2EditCategoryName" class="form-control" 
+                                   placeholder="输入新的分类名称" 
+                                   style="font-size: 12px; padding: 6px; margin-bottom: 8px;">
+                            <div style="display: flex; gap: 6px;">
+                                <button id="phase2ConfirmEditCategory" class="btn btn-primary" style="font-size: 11px; padding: 4px 8px; flex: 1;">✓ 确定</button>
+                                <button id="phase2CancelEditCategory" class="btn btn-default" style="font-size: 11px; padding: 4px 8px; flex: 1;">✕ 取消</button>
+                            </div>
+                        </div>
+                        
+                        <!-- 分类列表 -->
+                        <div id="phase2CategoriesList" class="categories-list" style="display: flex; flex-direction: column; gap: 6px;">
+                            <div class="loading">加载中...</div>
+                        </div>
+                    </div>
+                    <!-- 隔离工具栏：分类操作 -->
+                    <div style="border-top: 1px solid #d0d0d0; padding: 8px; background: #f0f8ff; display: flex; gap: 4px; justify-content: space-between;">
+                        <button id="phase2AddCategory" class="btn btn-small" style="font-size: 11px; padding: 4px 6px; flex: 1;">+ 新增</button>
+                        <button id="phase2EditCategory" class="btn btn-small" style="font-size: 11px; padding: 4px 6px; flex: 1;">✏️ 编辑</button>
+                        <button id="phase2DeleteCategory" class="btn btn-small" style="font-size: 11px; padding: 4px 6px; flex: 1;">🗑️ 删除</button>
+                    </div>
+                </div>
+
+                <!-- 中列：规则名称列表 (19%) -->
+                <div id="phase2MiddlePanel" class="phase2-panel" style="flex: 0 0 19%; display: flex; flex-direction: column; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; background: #fff; cursor: auto;">
+                    <div style="padding: 12px; flex: 1; overflow-y: auto; display: flex; flex-direction: column;">
+                        <h4 id="phase2RulesTitle" style="margin: 0 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid #0066cc; font-size: 14px;">📋 规则列表</h4>
+                        
+                        <!-- 新增规则编辑区（初始隐藏） -->
+                        <div id="phase2AddRuleEditor" style="display: none; margin-bottom: 12px; padding: 10px; background: #fff; border: 2px solid #0066cc; border-radius: 4px; gap: 8px; flex-direction: column;">
+                            <input type="text" id="phase2NewRuleName" class="form-control" 
+                                   placeholder="规则名称（例：Breaking Bad标准格式）" 
+                                   style="font-size: 11px; padding: 4px; margin-bottom: 4px;">
+                            <input type="text" id="phase2NewRuleDesc" class="form-control" 
+                                   placeholder="规则描述（可选）" 
+                                   style="font-size: 11px; padding: 4px; margin-bottom: 4px;">
+                            <input type="text" id="phase2NewRuleSource" class="form-control" 
+                                   placeholder="源模板（例：${title} ${S}x${E}）" 
+                                   style="font-size: 11px; padding: 4px; margin-bottom: 4px; font-family: monospace;">
+                            <input type="text" id="phase2NewRuleTarget" class="form-control" 
+                                   placeholder="目标模板（例：${title} - S${S}E${E}）" 
+                                   style="font-size: 11px; padding: 4px; margin-bottom: 8px; font-family: monospace;">
+                            <div style="display: flex; gap: 6px;">
+                                <button id="phase2ConfirmAddRule" class="btn btn-primary" style="font-size: 10px; padding: 3px 6px; flex: 1;">✓ 确定</button>
+                                <button id="phase2CancelAddRule" class="btn btn-default" style="font-size: 10px; padding: 3px 6px; flex: 1;">✕ 取消</button>
+                            </div>
+                        </div>
+                        
+                        <!-- 编辑规则编辑区（初始隐藏） -->
+                        <div id="phase2EditRuleEditor" style="display: none; margin-bottom: 12px; padding: 10px; background: #fffacd; border: 2px solid #ff9900; border-radius: 4px; gap: 8px; flex-direction: column;">
+                            <input type="text" id="phase2EditRuleName" class="form-control" 
+                                   placeholder="规则名称" 
+                                   style="font-size: 11px; padding: 4px; margin-bottom: 4px;">
+                            <input type="text" id="phase2EditRuleDesc" class="form-control" 
+                                   placeholder="规则描述（可选）" 
+                                   style="font-size: 11px; padding: 4px; margin-bottom: 4px;">
+                            <input type="text" id="phase2EditRuleSource" class="form-control" 
+                                   placeholder="源模板" 
+                                   style="font-size: 11px; padding: 4px; margin-bottom: 4px; font-family: monospace;">
+                            <input type="text" id="phase2EditRuleTarget" class="form-control" 
+                                   placeholder="目标模板" 
+                                   style="font-size: 11px; padding: 4px; margin-bottom: 8px; font-family: monospace;">
+                            <div style="display: flex; gap: 6px;">
+                                <button id="phase2ConfirmEditRule" class="btn btn-primary" style="font-size: 10px; padding: 3px 6px; flex: 1;">✓ 确定</button>
+                                <button id="phase2CancelEditRule" class="btn btn-default" style="font-size: 10px; padding: 3px 6px; flex: 1;">✕ 取消</button>
+                            </div>
+                        </div>
+                        
+                        <!-- 规则列表 -->
+                        <div id="phase2RulesList" class="rules-list" style="display: flex; flex-direction: column; gap: 6px;">
+                            <div class="empty-state">请先选择分类</div>
+                        </div>
+                    </div>
+                    <!-- 隔离工具栏：规则操作 -->
+                    <div style="border-top: 1px solid #d0d0d0; padding: 8px; background: #fff8f0; display: flex; gap: 4px; justify-content: space-between;">
+                        <button id="phase2AddRule" class="btn btn-small" style="font-size: 11px; padding: 4px 6px; flex: 1;">+ 新增</button>
+                        <button id="phase2EditRule" class="btn btn-small" style="font-size: 11px; padding: 4px 6px; flex: 1;">✏️ 编辑</button>
+                        <button id="phase2DeleteRule" class="btn btn-small" style="font-size: 11px; padding: 4px 6px; flex: 1;">🗑️ 删除</button>
+                    </div>
+                </div>
+
+                <!-- 右列：分为上下两部分 (~69%) -->
+                <div id="phase2RightPanel" class="phase2-panel" style="flex: 1; display: flex; flex-direction: column; gap: 12px; overflow: hidden; border: 1px solid #ddd; border-radius: 4px; padding: 12px; cursor: auto;">
+                    
+                    <!-- 无规则选中时显示占位容器 -->
+                    <div id="phase2NoRuleSelected" style="height: 100%; display: flex; align-items: center; justify-content: center;">
+                        <div style="text-align: center; color: #999; font-size: 14px;">
+                            <div style="margin-bottom: 8px;">📋</div>
+                            <div>请在左侧选择一个规则</div>
+                            <div style="font-size: 12px; margin-top: 8px; color: #bbb;">以及相应的分类</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 有规则选中时显示 -->
+                    <div id="phase2RuleSelected" style="height: 100%; display: none; flex-direction: column; gap: 12px; overflow: hidden;">
+                        
+                        <!-- 上部：测试区 - 自适应高度 -->
+                        <div id="phase2TestSection" style="flex: 0 0 auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; background: #f9f9f9; overflow-y: auto; max-height: 60%;">
+                            <h4 style="margin: 0 0 8px 0; padding-bottom: 6px; border-bottom: 2px solid #ff9900; font-size: 12px;">🧪 测试实际修改效果</h4>
+                            
+                            <!-- 源文件名输入 (full width) -->
+                            <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                                <label style="font-weight: bold; font-size: 11px; white-space: nowrap; min-width: 60px;">源文件名:</label>
+                                <input type="text" id="phase2TestSourceFilename" class="form-control" 
+                                       placeholder="例: Breaking Bad 2x08 - Salud.mkv" style="font-size: 13px; padding: 4px; flex: 1;">
+                            </div>
+
+                            <!-- 动态变量区域 -->
+                            <div id="phase2DynamicVariables" style="margin-bottom: 8px;"></div>
+
+                            <!-- 生成文件名预览 (full width) -->
+                            <div>
+                                <label style="font-weight: bold; font-size: 11px; display: block; margin-bottom: 2px;">📝 生成文件名:</label>
+                                <div id="phase2TestResultFilename" style="padding: 6px; background: #e8f5e9; border: 1px solid #28a745; border-radius: 3px; font-family: monospace; font-size: 13px; color: #228a22; word-break: break-word; min-height: 18px;">
+                                    [等待输入]
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 下部：规则详情 - 可滚动 -->
+                        <div id="phase2DetailSection" style="flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 12px; background: #fff; overflow-y: auto;">
+                            <h4 style="margin: 0 0 8px 0; padding-bottom: 6px; border-bottom: 2px solid #0066cc; font-size: 12px;">ℹ️ 规则详情</h4>
+                            
+                            <!-- 第一行：规则名称 + 描述 -->
+                            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-bottom: 8px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <label style="font-weight: bold; font-size: 11px; white-space: nowrap; min-width: 50px;">规则名称:</label>
+                                        <div id="phase2DetailName" style="padding: 4px; background: #f5f5f5; border-radius: 2px; border: 1px solid #ddd; font-size: 13px; word-break: break-word; flex: 1;">-</div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <label style="font-weight: bold; font-size: 11px; white-space: nowrap; min-width: 40px;">描述:</label>
+                                        <div id="phase2DetailDescription" style="padding: 4px; background: #f5f5f5; border-radius: 2px; border: 1px solid #ddd; font-size: 13px; line-height: 1.3; max-height: 30px; overflow-y: auto; flex: 1;">-</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 第二行：源模板 + 目标模板 -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <label style="font-weight: bold; font-size: 11px; white-space: nowrap; min-width: 50px;">源模板:</label>
+                                        <input type="text" id="phase2DetailSource" class="form-control" style="font-family: monospace; font-size: 13px; padding: 3px; flex: 1;">
+                                    </div>
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <label style="font-weight: bold; font-size: 11px; white-space: nowrap; min-width: 50px;">目标模板:</label>
+                                        <input type="text" id="phase2DetailTarget" class="form-control" style="font-family: monospace; font-size: 13px; padding: 3px; flex: 1;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 全局变量插入工具 -->
+                            <div style="margin-bottom: 0; padding: 8px; background: #f9f9f9; border-radius: 2px; border: 1px solid #e0e0e0;">
+                                <label style="font-weight: bold; font-size: 10px; display: block; margin-bottom: 4px;">📌 全局变量（点击插入）:</label>
+                                <div id="phase2GlobalVariables" style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                    <span style="font-size: 10px; color: #999;">加载中...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
     <script src="/static/js/app.js"></script>
-</body>
-</html>

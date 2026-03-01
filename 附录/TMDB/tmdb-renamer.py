@@ -29,6 +29,29 @@ import requests
 import base64
 import hashlib
 
+# Phase 2 模板引擎 - 改进的导入机制
+PHASE2_ENABLED = False
+TemplateRuleEngine = None
+load_rules_from_json = None
+
+try:
+    # 方式1: 尝试直接导入（同目录）
+    from template_engine import TemplateRuleEngine, load_rules_from_json
+    PHASE2_ENABLED = True
+except ImportError:
+    try:
+        # 方式2: 尝试从脚本所在目录导入（处理不同工作目录）
+        script_dir = Path(__file__).parent.absolute()
+        if str(script_dir) not in sys.path:
+            sys.path.insert(0, str(script_dir))
+        from template_engine import TemplateRuleEngine, load_rules_from_json
+        PHASE2_ENABLED = True
+    except ImportError as e:
+        PHASE2_ENABLED = False
+        # 延迟创建 logger（因为此时还未配置）
+        pass
+
+# 日志配置
 # 日志配置
 logging.basicConfig(
     level=logging.INFO,
@@ -39,6 +62,10 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+# 检查 Phase 2 引擎是否加载成功
+if not PHASE2_ENABLED:
+    logger.warning("⚠️  无法导入 Phase 2 模板引擎，将使用原始规则系统")
 
 
 class ConfigManager:
@@ -594,6 +621,7 @@ class WebRequestHandler(SimpleHTTPRequestHandler):
     tv_directory = None
     config_manager = None
     tmdb_client = None
+    phase2_engine = None  # Phase 2 模板引擎（如果可用）
     
     def do_GET(self):
         """处理 GET 请求"""
@@ -647,6 +675,13 @@ class WebRequestHandler(SimpleHTTPRequestHandler):
         
         if path == '/api/get-rules':
             return self._api_get_rules()
+        
+        # Phase 2 API 端点
+        if path == '/api/phase2/status':
+            return self._api_phase2_status()
+        
+        if path == '/api/phase2/rules':
+            return self._api_phase2_rules()
         
         if path == '/api/preview-rename':
             return self._api_preview_rename(query_params)
@@ -851,53 +886,86 @@ class WebRequestHandler(SimpleHTTPRequestHandler):
         series_name = query_params.get('series_name', [''])[0]
         series_id = query_params.get('series_id', [''])[0]
         regex_pattern = query_params.get('regex', [''])[0]
+        rule_mode = query_params.get('rule_mode', ['auto'])[0]  # auto | template | legacy
         
         if not filename or not series_name:
             return self._json_response({'error': '参数不足'}, 400)
         
-        # 提取季集
-        season_ep = FileSystemManager.extract_season_episode(filename)
+        # ===== Phase 2 模板规则路径 =====
+        new_filename = None
+        phase2_result = None
         
-        if not season_ep and not regex_pattern:
-            return self._json_response({
-                'error': '无法识别季集',
-                'extracted': None
-            })
-        
-        if regex_pattern:
-            # 使用自定义正则
+        if self.phase2_engine and rule_mode in ['auto', 'template']:
             try:
-                match = re.search(regex_pattern, filename)
-                if match and len(match.groups()) >= 2:
-                    season = int(match.group(1))
-                    episode = int(match.group(2))
-                    season_ep = (season, episode)
-                else:
-                    return self._json_response({'error': '正则表达式不匹配'}, 400)
+                # 尝试使用 Phase 2 规则
+                phase2_result = self.phase2_engine.process_filename(
+                    filename,
+                    options={'category': '常规'}
+                )
+                
+                if phase2_result and phase2_result.get('success'):
+                    new_filename = phase2_result.get('generated', filename)
+                    logger.info(f"[Phase 2] 使用规则 {phase2_result.get('rule', {}).get('name')} 重命名: {filename} -> {new_filename}")
             except Exception as e:
-                return self._json_response({'error': f'正则错误: {e}'}, 400)
+                logger.warning(f"[Phase 2] 规则处理失败: {e}")
+                if rule_mode == 'template':
+                    # 强制使用 Phase 2，失败则返回错误
+                    return self._json_response({
+                        'error': f'Phase 2 规则处理失败: {e}'
+                    }, 400)
         
-        season, episode = season_ep
-        file_ext = Path(filename).suffix
+        # ===== 回退到原始规则系统 =====
+        if not new_filename and rule_mode in ['auto', 'legacy']:
+            # 提取季集
+            season_ep = FileSystemManager.extract_season_episode(filename)
+            
+            if not season_ep and not regex_pattern:
+                return self._json_response({
+                    'error': '无法识别季集',
+                    'extracted': None
+                })
+            
+            if regex_pattern:
+                # 使用自定义正则
+                try:
+                    match = re.search(regex_pattern, filename)
+                    if match and len(match.groups()) >= 2:
+                        season = int(match.group(1))
+                        episode = int(match.group(2))
+                        season_ep = (season, episode)
+                    else:
+                        return self._json_response({'error': '正则表达式不匹配'}, 400)
+                except Exception as e:
+                    return self._json_response({'error': f'正则错误: {e}'}, 400)
+            
+            season, episode = season_ep
+            file_ext = Path(filename).suffix
+            
+            # 获取剧集名称
+            episode_name = None
+            if series_id:
+                try:
+                    episode_name = self.tmdb_client.get_episode_name(int(series_id), season, episode)
+                except:
+                    pass
+            
+            new_filename = FileSystemManager.build_new_filename(
+                series_name, season, episode, episode_name, file_ext
+            )
+            logger.info(f"[Legacy] 使用原始规则重命名: {filename} -> {new_filename}")
         
-        # 获取剧集名称
-        episode_name = None
-        if series_id:
-            try:
-                episode_name = self.tmdb_client.get_episode_name(int(series_id), season, episode)
-            except:
-                pass
-        
-        new_filename = FileSystemManager.build_new_filename(
-            series_name, season, episode, episode_name, file_ext
-        )
+        if not new_filename:
+            return self._json_response({
+                'error': '无法生成新文件名'
+            }, 400)
         
         return self._json_response({
             'original': filename,
             'new_name': new_filename,
-            'season': season,
-            'episode': episode,
-            'episode_name': episode_name
+            'season': season_ep[0] if season_ep else None,
+            'episode': season_ep[1] if season_ep else None,
+            'episode_name': phase2_result.get('extracted', {}).get('episode_name') if phase2_result else None,
+            'rule_mode_used': 'template' if phase2_result and phase2_result.get('success') else 'legacy'
         })
     
     def _api_extract_format(self, data: Dict):
@@ -935,6 +1003,35 @@ class WebRequestHandler(SimpleHTTPRequestHandler):
             return self._json_response({
                 'error': '无法识别文件名格式'
             }, 400)
+    
+    def _api_phase2_status(self):
+        """获取 Phase 2 引擎状态"""
+        status = {
+            'enabled': self.phase2_engine is not None,
+            'rules_count': 0
+        }
+        
+        if self.phase2_engine:
+            status['rules_count'] = len(self.phase2_engine.get_categories())
+        
+        return self._json_response(status)
+    
+    def _api_phase2_rules(self):
+        """获取 Phase 2 规则配置"""
+        if not self.phase2_engine:
+            return self._json_response({
+                'error': 'Phase 2 引擎未加载',
+                'rules': {},
+                'globalVariables': {}
+            }, 503)
+        
+        # 返回规则和全局变量
+        return self._json_response({
+            'enabled': True,
+            'rules': self.phase2_engine.substitution_rules,
+            'globalVariables': self.phase2_engine.global_variables,
+            'categories': self.phase2_engine.get_categories()
+        })
     
     def _api_get_rules(self):
         """获取所有自定义规则"""
@@ -1116,10 +1213,26 @@ def main():
     api_key = config_manager.get_api_key()
     tmdb_client = TMDBClient(api_key) if api_key else None
     
+    # 初始化 Phase 2 模板引擎
+    phase2_engine = None
+    if PHASE2_ENABLED:
+        try:
+            # 加载 Phase 2 规则
+            rules_json_path = Path(__file__).parent / 'config' / 'substitution-rules.json'
+            if rules_json_path.exists():
+                substitution_rules, global_variables = load_rules_from_json(str(rules_json_path))
+                phase2_engine = TemplateRuleEngine(substitution_rules, global_variables)
+                logger.info(f"✓ Phase 2 模板引擎已加载（{len(substitution_rules)} 个规则分类）")
+            else:
+                logger.warning(f"⚠ Phase 2 规则文件未找到: {rules_json_path}")
+        except Exception as e:
+            logger.warning(f"⚠ 初始化 Phase 2 引擎失败: {e}，将使用原始规则系统")
+    
     # 设置类变量
     WebRequestHandler.tv_directory = str(tv_dir)
     WebRequestHandler.config_manager = config_manager
     WebRequestHandler.tmdb_client = tmdb_client
+    WebRequestHandler.phase2_engine = phase2_engine
     
     if api_key:
         logger.info(f"✓ 已加载API密钥 - 前10位: {api_key[:10]}***")

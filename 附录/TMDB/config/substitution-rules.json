@@ -1,0 +1,182 @@
+{
+  "$schema": "substitution-rules-schema.json",
+  "$version": "1.0",
+  "$description": "Phase 2 - 替换规则配置文件（核心设计2）",
+  
+  "globalVariables": {
+    "电影名": "${title}",
+    "季号": "${S}",
+    "集号": "${E}",
+    "年份": "${year}",
+    "前缀": "${prefix}",
+    "后缀": "${suffix}",
+    "扩展名": "${ext}",
+    "自定义1": "${custom1}"
+  },
+
+  "substitutionRules": {
+    "常规": [
+      {
+        "id": "rule_std_001",
+        "name": "标准 01x01 格式",
+        "enabled": true,
+        "sourceTemplate": "${title} ${S}x${E} - ${name}.${ext}",
+        "targetTemplate": "${title} - S${S}E${E} - ${name}.${ext}",
+        "extractionStrategy": "numeric",
+        "description": "匹配 Breaking.Bad.01x01 或类似格式",
+        "exampleInput": "Breaking Bad 2x08 - Salud.mkv",
+        "exampleOutput": "Breaking Bad - S02E08 - Salud.mkv",
+        "variables": {}
+      },
+      {
+        "id": "rule_std_002",
+        "name": "标准 S##E## 格式",
+        "enabled": true,
+        "sourceTemplate": "${title} S${S}E${E} - ${name}.${ext}",
+        "targetTemplate": "${title} - S${S}E${E} - ${name}.${ext}",
+        "extractionStrategy": "numeric",
+        "description": "匹配标准的 S##E## 格式",
+        "exampleInput": "Breaking Bad S02E08 - Salud.mkv",
+        "exampleOutput": "Breaking Bad - S02E08 - Salud.mkv",
+        "variables": {}
+      },
+      {
+        "id": "rule_std_003",
+        "name": "简单数字格式 - 点号分隔",
+        "enabled": true,
+        "sourceTemplate": "${title} ${S}.${E}.${ext}",
+        "targetTemplate": "${title} - S${S}E${E}.${ext}",
+        "extractionStrategy": "numeric",
+        "description": "匹配 SeriesName.2.08.mkv 格式",
+        "exampleInput": "Breaking Bad 2.08.mkv",
+        "exampleOutput": "Breaking Bad - S02E08.mkv",
+        "variables": {}
+      },
+      {
+        "id": "rule_std_004",
+        "name": "带年份的格式",
+        "enabled": true,
+        "sourceTemplate": "${title} (${year}) ${S}x${E} - ${name}.${ext}",
+        "targetTemplate": "${title} (${year}) - S${S}E${E} - ${name}.${ext}",
+        "extractionStrategy": "numeric",
+        "description": "包含发布年份的格式",
+        "exampleInput": "Breaking Bad (2008) 2x08 - Salud.mkv",
+        "exampleOutput": "Breaking Bad (2008) - S02E08 - Salud.mkv",
+        "variables": {}
+      }
+    ],
+    
+    "电视剧_Breaking Bad": [
+      {
+        "id": "rule_bb_001",
+        "name": "Breaking Bad - 点号分隔（官方）",
+        "enabled": true,
+        "sourceTemplate": "${title} ${S}.${E} - ${name}.${ext}",
+        "targetTemplate": "${title} - S${S}E${E} - ${name}.${ext}",
+        "extractionStrategy": "numeric",
+        "description": "Breaking Bad 官方使用的格式",
+        "exampleInput": "Breaking Bad 2.08 - Salud.mkv",
+        "exampleOutput": "Breaking Bad - S02E08 - Salud.mkv",
+        "variables": {
+          "季号": "${S}",
+          "集号": "${E}"
+        }
+      },
+      {
+        "id": "rule_bb_002",
+        "name": "Breaking Bad - 带括号年份",
+        "enabled": true,
+        "sourceTemplate": "${title} (${year}) ${S}.${E} ${name}.${ext}",
+        "targetTemplate": "${title} (${year}) S${S}E${E} - ${name}.${ext}",
+        "extractionStrategy": "numeric",
+        "description": "包含发布年份的 Breaking Bad 格式",
+        "exampleInput": "Breaking Bad (2008) 2.08 Salud.mkv",
+        "exampleOutput": "Breaking Bad (2008) S02E08 - Salud.mkv",
+        "variables": {}
+      },
+      {
+        "id": "rule_bb_003",
+        "name": "Breaking Bad - 前缀格式",
+        "enabled": true,
+        "sourceTemplate": "[${prefix}] ${title} ${S}${E} - ${name}.${ext}",
+        "targetTemplate": "${title} - S${S}E${E} - ${name}.${ext}",
+        "extractionStrategy": "numeric",
+        "description": "带前缀括号的格式，例如 [TVSHOW]",
+        "exampleInput": "[TVSHOW] Breaking Bad 208 - Salud.mkv",
+        "exampleOutput": "Breaking Bad - S02E08 - Salud.mkv",
+        "variables": {}
+      }
+    ],
+
+    "电视剧_权力游戏": [
+      {
+        "id": "rule_got_001",
+        "name": "权力游戏 - 括号年份格式",
+        "enabled": true,
+        "sourceTemplate": "${title} (${year}) ${S}x${E}.${ext}",
+        "targetTemplate": "${title} S${S}E${E}.${ext}",
+        "extractionStrategy": "numeric",
+        "description": "权力游戏常见的格式",
+        "exampleInput": "Game of Thrones (2011) 1x01.mkv",
+        "exampleOutput": "Game of Thrones S01E01.mkv",
+        "variables": {}
+      },
+      {
+        "id": "rule_got_002",
+        "name": "权力游戏 - 标准格式",
+        "enabled": true,
+        "sourceTemplate": "${title} S${S}E${E} ${name}.${ext}",
+        "targetTemplate": "${title} S${S}E${E} - ${name}.${ext}",
+        "extractionStrategy": "numeric",
+        "description": "标准的 S##E## 格式",
+        "exampleInput": "Game of Thrones S01E01 Winter is Coming.mkv",
+        "exampleOutput": "Game of Thrones S01E01 - Winter is Coming.mkv",
+        "variables": {}
+      }
+    ],
+
+    "电影_Dune": [
+      {
+        "id": "rule_movie_dune_001",
+        "name": "Dune - 基础格式",
+        "enabled": true,
+        "sourceTemplate": "${title} (${year}).${ext}",
+        "targetTemplate": "${title} (${year}).${ext}",
+        "extractionStrategy": "numeric",
+        "description": "Dune 电影的标准格式（保持不变）",
+        "exampleInput": "Dune (2021).mkv",
+        "exampleOutput": "Dune (2021).mkv",
+        "variables": {}
+      },
+      {
+        "id": "rule_movie_dune_002",
+        "name": "Dune - 带分辨率格式",
+        "enabled": true,
+        "sourceTemplate": "${title} (${year}) ${suffix}.${ext}",
+        "targetTemplate": "${title} (${year}) - ${suffix}.${ext}",
+        "extractionStrategy": "numeric",
+        "description": "包含分辨率或质量标记的格式",
+        "exampleInput": "Dune (2021) 1080p.mkv",
+        "exampleOutput": "Dune (2021) - 1080p.mkv",
+        "variables": {}
+      }
+    ]
+  },
+
+  "_comments": {
+    "globalVariables": "全局变量定义，可被所有规则使用",
+    "substitutionRules": "替换规则按分类组织（常规 > 专用）",
+    "rule_structure": {
+      "id": "唯一标识符，用于引用规则",
+      "name": "规则名称，用于UI展示",
+      "enabled": "是否启用此规则",
+      "sourceTemplate": "源模板：从文件名中提取变量的模式",
+      "targetTemplate": "目标模板：生成新文件名的模式",
+      "extractionStrategy": "提取策略：numeric | position | manual",
+      "description": "规则描述",
+      "exampleInput": "示例输入文件名",
+      "exampleOutput": "示例输出文件名",
+      "variables": "规则级别的变量覆盖（可选）"
+    }
+  }
+}
