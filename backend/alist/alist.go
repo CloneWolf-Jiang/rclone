@@ -277,7 +277,7 @@ func (f *Fs) DirMove(ctx context.Context, src fs.Fs, srcRemote, dstRemote string
 	if err == nil {
 		return fs.ErrorDirExists
 	}
-	if err != nil && !errors.Is(err, errNotFound) {
+	if !errors.Is(err, errNotFound) {
 		return err
 	}
 

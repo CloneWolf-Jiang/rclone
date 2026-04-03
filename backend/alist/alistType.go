@@ -78,20 +78,6 @@ type renameRequest struct {
 	Path string `json:"path"`
 }
 
-// putData 对应 /api/fs/put 返回中的 data.task。
-type putData struct {
-	Task *taskInfo `json:"task,omitempty"`
-}
-
-type taskInfo struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	State    int    `json:"state"`
-	Status   string `json:"status"`
-	Progress int    `json:"progress"`
-	Error    string `json:"error"`
-}
-
 // entry 对应 /api/fs/list 与 /api/fs/get 的文件/目录信息。
 type entry struct {
 	Name           string          `json:"name"`
