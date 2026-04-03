@@ -4,14 +4,8 @@
 
 name: build
 
-# Trigger the workflow on push or pull request
+# Trigger the workflow manually
 on:
-  push:
-    branches:
-      - '**'
-    tags:
-      - '**'
-  pull_request:
   workflow_dispatch:
     inputs:
       manual:
