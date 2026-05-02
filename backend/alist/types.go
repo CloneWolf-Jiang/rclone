@@ -14,6 +14,7 @@ type Options struct {
 	Token    string `config:"token"`
 	Username string `config:"username"`
 	Password string `config:"password"`
+	RootPath string `config:"root_path"`
 }
 
 // Fs 描述一个 AList 远端。
