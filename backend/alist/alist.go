@@ -47,6 +47,11 @@ func init() {
 			Help:       "当未配置 token 时使用该密码自动登录。",
 			Sensitive:  true,
 			IsPassword: true,
+		}, {
+			Name:     "root_path",
+			Help:     "远端的起始路径，默认为根路径 \"/\"。命令行中指定的路径将以此路径为基础拼接。",
+			Default:  "/",
+			Advanced: true,
 		}},
 	})
 }
@@ -65,7 +70,7 @@ func NewFs(ctx context.Context, name, root string, m configmap.Mapper) (fs.Fs, e
 		}
 	}
 
-	root = strings.Trim(root, "/")
+	root = strings.Trim(path.Join(opt.RootPath, root), "/")
 	baseURL := strings.TrimRight(opt.URL, "/")
 	baseURL = strings.TrimSuffix(baseURL, "/api")
 	baseURL += "/api"
