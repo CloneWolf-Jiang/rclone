@@ -1,6 +1,7 @@
 package alist
 
 import (
+	"context"
 	"testing"
 	"time"
 )
@@ -62,5 +63,13 @@ func TestObjectStorable(t *testing.T) {
 	o := &Object{modTime: time.Now()}
 	if !o.Storable() {
 		t.Fatal("expected object to be storable")
+	}
+}
+
+func TestFeaturesPartialUploads(t *testing.T) {
+	f := &Fs{}
+	f.initFeatures(context.Background())
+	if !f.Features().PartialUploads {
+		t.Fatal("expected PartialUploads to be enabled for atomic upload support")
 	}
 }

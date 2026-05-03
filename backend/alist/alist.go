@@ -84,9 +84,7 @@ func NewFs(ctx context.Context, name, root string, m configmap.Mapper) (fs.Fs, e
 		),
 	}
 
-	f.features = (&fs.Features{
-		CanHaveEmptyDirectories: true,
-	}).Fill(ctx, f)
+	f.initFeatures(ctx)
 
 	if err := f.login(ctx); err != nil {
 		return nil, err
@@ -120,6 +118,14 @@ func (f *Fs) Precision() time.Duration { return time.Second }
 
 // Hashes 返回支持的哈希类型。
 func (f *Fs) Hashes() hash.Set { return hash.Set(hash.None) }
+
+// initFeatures 初始化后端能力集合，启用原子上传（PartialUploads）使上传中断后不留下残缺文件。
+func (f *Fs) initFeatures(ctx context.Context) {
+	f.features = (&fs.Features{
+		CanHaveEmptyDirectories: true,
+		PartialUploads:          true,
+	}).Fill(ctx, f)
+}
 
 // Features 返回可选能力集合。
 func (f *Fs) Features() *fs.Features { return f.features }
