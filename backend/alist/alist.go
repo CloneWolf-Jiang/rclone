@@ -32,8 +32,8 @@ func init() {
 		Description: "AList",
 		NewFs:       NewFs,
 		Options: []fs.Option{{
-			Name:     "url",
-			Help:     "AList 服务地址，例如 https://alist.example.com",
+			Name:     "api_url",
+			Help:     "Alist服务器地址（如 http://localhost:5244）",
 			Required: true,
 		}, {
 			Name:      "token",
