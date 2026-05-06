@@ -261,7 +261,16 @@ func (f *Fs) Move(ctx context.Context, src fs.Object, remote string) (fs.Object,
 	srcFull := srcObj.fs.absPath(srcObj.remote)
 	dstFull := f.absPath(remote)
 	if path.Dir(srcFull) == path.Dir(dstFull) && path.Base(srcFull) != path.Base(dstFull) {
-		if err := f.apiRename(ctx, srcFull, path.Base(dstFull)); err != nil {
+		err := f.apiRename(ctx, srcFull, path.Base(dstFull))
+		if errors.Is(err, errFileExists) {
+			// AList /fs/rename 不支持覆盖同名文件；先删除目标，再重命名。
+			// 这与 rclone 的覆盖写语义一致（partial → final）。
+			if delErr := f.apiRemoveByPath(ctx, dstFull); delErr != nil {
+				return nil, fmt.Errorf("删除已有目标文件失败：%w", delErr)
+			}
+			err = f.apiRename(ctx, srcFull, path.Base(dstFull))
+		}
+		if err != nil {
 			return nil, err
 		}
 		return f.NewObject(ctx, remote)
