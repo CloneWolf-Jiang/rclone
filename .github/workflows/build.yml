@@ -13,6 +13,9 @@ on:
         type: boolean
         default: true
 
+permissions:
+  contents: read
+
 jobs:
   build:
     if: inputs.manual || (github.repository == (inputs.repo || 'CloneWolf-Jiang/rclone')  && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name))
@@ -221,7 +224,7 @@ jobs:
           go-version: '~1.26.0'
           check-latest: true
           cache: false
-
+          
       - name: Cache
         uses: actions/cache@v5
         with:
