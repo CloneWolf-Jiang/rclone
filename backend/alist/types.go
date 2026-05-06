@@ -2,6 +2,7 @@
 package alist
 
 import (
+	"sync"
 	"time"
 
 	"github.com/rclone/rclone/fs"
@@ -26,6 +27,8 @@ type Fs struct {
 	srv      *rest.Client
 	pacer    *fs.Pacer
 
+	// mu 保护下面与 token 相关的字段，防止并发登录竞争。
+	mu             sync.Mutex
 	// 自动登录得到的 token 仅保存在内存，48 小时后会自动刷新。
 	tokenFromLogin bool
 	tokenExpiresAt time.Time
