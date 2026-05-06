@@ -69,7 +69,7 @@ func isAPINotFound(code int, message string) bool {
 // AList 错误示例：message="file [folder.jpg] exists"
 func isFileExistsMessage(message string) bool {
 	msg := strings.ToLower(strings.TrimSpace(message))
-	return strings.HasSuffix(msg, "exists") || strings.Contains(msg, "] exists")
+	return strings.HasSuffix(msg, "exists")
 }
 
 func (f *Fs) ensureAuth(ctx context.Context) error {
