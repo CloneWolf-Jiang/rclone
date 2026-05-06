@@ -10,7 +10,7 @@ import (
 
 // Options 定义后端配置。
 type Options struct {
-	URL      string `config:"url"`
+	URL      string `config:"api_url"`
 	Token    string `config:"token"`
 	Username string `config:"username"`
 	Password string `config:"password"`
