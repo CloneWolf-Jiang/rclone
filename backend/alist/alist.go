@@ -213,7 +213,7 @@ func (f *Fs) Mkdir(ctx context.Context, dir string) error {
 // Rmdir 删除空目录。
 func (f *Fs) Rmdir(ctx context.Context, dir string) error {
 	if dir == "" {
-		return fs.ErrorDirectoryNotEmpty
+		return fs.ErrorCantPurge
 	}
 	if err := f.apiRemoveByPath(ctx, f.absPath(dir)); err != nil {
 		if err == errNotFound {
@@ -230,7 +230,7 @@ func (f *Fs) Copy(ctx context.Context, src fs.Object, remote string) (fs.Object,
 	if !ok {
 		return nil, fs.ErrorCantCopy
 	}
-	if srcObj.fs.Name() != f.Name() {
+	if srcObj.fs.opt.URL != f.opt.URL {
 		return nil, fs.ErrorCantCopy
 	}
 
@@ -254,7 +254,7 @@ func (f *Fs) Move(ctx context.Context, src fs.Object, remote string) (fs.Object,
 	if !ok {
 		return nil, fs.ErrorCantMove
 	}
-	if srcObj.fs.Name() != f.Name() {
+	if srcObj.fs.opt.URL != f.opt.URL {
 		return nil, fs.ErrorCantMove
 	}
 
@@ -288,7 +288,7 @@ func (f *Fs) DirMove(ctx context.Context, src fs.Fs, srcRemote, dstRemote string
 	if !ok {
 		return fs.ErrorCantDirMove
 	}
-	if srcFs.Name() != f.Name() {
+	if srcFs.opt.URL != f.opt.URL {
 		return fs.ErrorCantDirMove
 	}
 
@@ -304,9 +304,10 @@ func (f *Fs) DirMove(ctx context.Context, src fs.Fs, srcRemote, dstRemote string
 	return f.apiMove(ctx, srcFs.absPath(srcRemote), f.absPath(dstRemote))
 }
 
-// Purge 批量删除目录下的所有条目（不删除目录本身）。
+// Purge 删除指定目录及其所有内容。
 func (f *Fs) Purge(ctx context.Context, dir string) error {
-	entries, err := f.apiList(ctx, f.absPath(dir))
+	absDir := f.absPath(dir)
+	entries, err := f.apiList(ctx, absDir)
 	if err == errNotFound {
 		return fs.ErrorDirNotFound
 	}
@@ -314,15 +315,21 @@ func (f *Fs) Purge(ctx context.Context, dir string) error {
 		return err
 	}
 
-	if len(entries) == 0 {
-		return nil
-	}
-	names := make([]string, 0, len(entries))
-	for i := range entries {
-		names = append(names, entries[i].Name)
+	if len(entries) > 0 {
+		names := make([]string, 0, len(entries))
+		for i := range entries {
+			names = append(names, entries[i].Name)
+		}
+		if err := f.apiRemoveByNames(ctx, absDir, names); err != nil {
+			return err
+		}
 	}
 
-	return f.apiRemoveByNames(ctx, f.absPath(dir), names)
+	// 删除目录本身（根目录不可删除）。
+	if dir == "" {
+		return nil
+	}
+	return f.apiRemoveByPath(ctx, absDir)
 }
 
 // Fs 返回对象所属的后端。

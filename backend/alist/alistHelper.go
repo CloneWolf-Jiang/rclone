@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"path"
 	"strconv"
 	"strings"
@@ -73,6 +72,9 @@ func isFileExistsMessage(message string) bool {
 }
 
 func (f *Fs) ensureAuth(ctx context.Context) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	// 用户显式配置 token 时，直接使用，不做自动续期。
 	if f.opt.Token != "" && !f.tokenFromLogin {
 		f.srv.SetHeader("Authorization", f.opt.Token)
@@ -89,7 +91,7 @@ func (f *Fs) ensureAuth(ctx context.Context) error {
 		return errors.New("未配置 token，且缺少用户名或密码")
 	}
 
-	return f.login(ctx)
+	return f.loginLocked(ctx)
 }
 
 func (f *Fs) callAPI(ctx context.Context, method, apiPath string, request any, response any) error {
@@ -129,7 +131,15 @@ func (f *Fs) callAPI(ctx context.Context, method, apiPath string, request any, r
 	return nil
 }
 
+// login 在初始化时调用（无需持有锁）。
 func (f *Fs) login(ctx context.Context) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.loginLocked(ctx)
+}
+
+// loginLocked 执行实际登录逻辑，调用前必须持有 f.mu。
+func (f *Fs) loginLocked(ctx context.Context) error {
 	if f.opt.Token != "" && !f.tokenFromLogin {
 		f.srv.SetHeader("Authorization", f.opt.Token)
 		f.tokenFromLogin = false
@@ -275,7 +285,7 @@ func (f *Fs) apiPut(ctx context.Context, fullPath string, in io.Reader, size int
 		ContentType:   "application/octet-stream",
 		ContentLength: &size,
 		ExtraHeaders: map[string]string{
-			"File-Path": url.PathEscape(fullPath),
+			"File-Path": rest.URLPathEscape(fullPath),
 		},
 	}
 
