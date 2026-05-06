@@ -1,0 +1,32 @@
+# Generated for rclone-alist wrapper (do not edit in-place on NAS package)
+[Unit]
+Description=rclone alist mount (SIGINT on stop)
+Requires=pkg-volume.target
+Requisite=network-online.target syno-share.target
+After=network-online.target pkg-volume.target syno-login.target syno-share.target
+IgnoreOnIsolate=no
+OnFailure=pkg-failure@rclone-alist.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+# 直接执行包装脚本，脚本的 'systemd-start' 子命令会 exec rclone（systemd 跟踪 MAINPID）
+ExecStart=/usr/local/bin/rclone-alist systemd-start
+# 停止时直接向主进程发送 SIGINT（等同 Ctrl+C）
+#ExecStop=/bin/kill -TERM $MAINPID
+#ExecStop=/bin/fusermount -u /volume2/Alist
+# 停止后调用包装脚本的 stop 子命令做幂等清理（可选，但建议保留）
+ExecStop=/usr/local/bin/rclone-alist stop
+#KillSignal=SIGINT
+#KillMode=control-group
+TimeoutStopSec=120
+Restart=on-failure
+RestartSec=5
+#Slice=ContainerManager.slice
+
+[Install]
+WantedBy=syno-low-priority-packages.target
+
+#[X-Synology]
+#Name=rclone-alist

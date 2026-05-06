@@ -1,0 +1,443 @@
+#!/bin/bash
+
+##############################################################################
+# Synology rclone 服务管理脚本
+# 功能：注册、启动、停止、重启 rclone mount 服务
+# 
+# 使用方法：
+#   将此脚本复制到 Synology：
+#   scp synology-rclone-service.sh root@YOUR_NAS:/etc/init.d/rclone-alist
+#   chmod +x /etc/init.d/rclone-alist
+#
+#   然后通过以下命令管理：
+#   sudo systemctl start rclone-alist        # 启动
+#   sudo systemctl stop rclone-alist         # 停止
+#   sudo systemctl restart rclone-alist      # 重启
+#   sudo systemctl status rclone-alist       # 查看状态
+#   sudo systemctl enable rclone-alist       # 开机自启
+#
+# 或使用 Synology 原生命令：
+#   sudo synoservicectl --start rclone-alist
+#   sudo synoservicectl --stop rclone-alist
+#   sudo synoservicectl --restart rclone-alist
+#   sudo synoservicectl --status rclone-alist
+#
+##############################################################################
+
+### BEGIN INIT INFO
+# Provides:          rclone-alist
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: rclone alist mount service
+# Description:       Manage rclone mount for alist remote storage
+### END INIT INFO
+
+# ============================================================================
+# 配置部分（可根据需要修改）
+# ============================================================================
+
+
+# 使用新的 libfuse3
+#export LD_LIBRARY_PATH=/opt/libfuse3/lib64:$LD_LIBRARY_PATH
+#export PATH=/opt/libfuse3/bin:$PATH
+
+
+# 服务名
+SERVICE_NAME="rclone-alist"
+
+# 日志文件
+LOG_FILE="/var/log/rclone-alist.log"
+LOG_DIR="/var/log"
+
+# 缓存目录
+CACHE_DIR="/volume2/rclone-cache"
+
+# 挂载点
+MOUNT_POINT="/volume2/Alist"
+
+# rclone 可执行路径（查找 rclone 位置）
+RCLONE=$(which rclone 2>/dev/null || echo "/root/rclone")
+
+# PID 文件
+PID_FILE="/var/run/${SERVICE_NAME}.pid"
+
+# rclone mount 参数（根据前面优化的配置）
+#MOUNT_ARGS="alist:/ ${MOUNT_POINT} \
+#  --config /root/.config/rclone/rclone.conf \
+#  -vv \
+#  --allow-other \
+#  --allow-non-empty \
+#  --vfs-cache-mode full \
+#  --cache-dir ${CACHE_DIR} \
+#  --vfs-cache-max-size 200G \
+#  --vfs-read-ahead 256M \
+#  --buffer-size 64M \
+#  --poll-interval 0 \
+#  --attr-timeout 1s"
+
+MOUNT_ARGS=(
+  "alist:/"
+  " ${MOUNT_POINT}"
+  --config /root/.config/rclone/rclone.conf
+  #-vv
+  --allow-other
+  --allow-non-empty
+  --vfs-cache-mode full
+  --cache-dir "${CACHE_DIR}"
+  --vfs-cache-max-size 200G
+  --vfs-cache-max-age 24h
+  --vfs-read-chunk-size 16M
+  --vfs-read-chunk-size-limit 256M
+  --vfs-read-chunk-streams 8
+  --vfs-read-ahead 128M
+  --buffer-size 16M
+  --dir-cache-time 1m
+  --poll-interval 15s
+  --transfers 8
+  --attr-timeout 5s
+  --log-level INFO
+  --log-file "$LOG_FILE"
+)
+
+#Jellyfin在Docker中的容器名称（区分大小写）
+CONTAINER="Jellyfin"
+
+# ============================================================================
+# 辅助函数
+# ============================================================================
+
+log_info() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] [INFO] $1" | tee -a "${LOG_FILE}"
+}
+
+log_error() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] [ERROR] $1" | tee -a "${LOG_FILE}" >&2
+}
+
+log_warn() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] [WARN] $1" | tee -a "${LOG_FILE}"
+}
+
+# 检查 rclone 是否存在
+check_rclone() {
+    if [[ ! -x "${RCLONE}" ]]; then
+        log_error "rclone 未找到或不可执行：${RCLONE}"
+        return 1
+    fi
+    return 0
+}
+
+# 检查挂载点
+check_mount_point() {
+    if [[ ! -d "${MOUNT_POINT}" ]]; then
+        log_warn "挂载点不存在，正在创建：${MOUNT_POINT}"
+        mkdir -p "${MOUNT_POINT}" || {
+            log_error "无法创建挂载点：${MOUNT_POINT}"
+            return 1
+        }
+    fi
+    return 0
+}
+
+# 检查缓存目录
+check_cache_dir() {
+    if [[ ! -d "${CACHE_DIR}" ]]; then
+        log_warn "缓存目录不存在，正在创建：${CACHE_DIR}"
+        mkdir -p "${CACHE_DIR}" || {
+            log_error "无法创建缓存目录：${CACHE_DIR}"
+            return 1
+        }
+    fi
+    return 0
+}
+
+# 检查日志目录
+check_log_dir() {
+    if [[ ! -d "${LOG_DIR}" ]]; then
+        mkdir -p "${LOG_DIR}" || {
+            log_error "无法创建日志目录：${LOG_DIR}"
+            return 1
+        }
+    fi
+}
+
+# 检查挂载是否存在（优先使用 /proc/mounts，回退到 findmnt）
+is_mounted() {
+    local mp="$1"
+    if [[ -z "${mp}" ]]; then
+        return 1
+    fi
+
+    # 优先使用 /proc/mounts 精确匹配第二列
+    if [[ -r /proc/mounts ]]; then
+        # /proc/mounts 中空格会被写成 \040，尝试两种匹配
+        local esc_mp="${mp// /\\040}"
+        awk -v m="$mp" -v e="$esc_mp" '$2==m || $2==e { exit 0 } END { exit 1 }' /proc/mounts && return 0
+    fi
+
+    # 回退到 findmnt（如果可用）
+    if command -v findmnt >/dev/null 2>&1; then
+        findmnt --target "$mp" >/dev/null 2>&1 && return 0
+    fi
+
+    return 1
+}
+
+# 获取服务状态
+get_status() {
+    if [[ -f "${PID_FILE}" ]]; then
+        local pid=$(cat "${PID_FILE}")
+        if ps -p "${pid}" >/dev/null 2>&1; then
+            return 0  # 运行中
+        else
+            rm -f "${PID_FILE}"
+            return 1  # PID 文件存在但进程不存在
+        fi
+    else
+        return 1  # PID 文件不存在
+    fi
+}
+
+
+#检查Jellyfen是否运行
+is_Docker_running() {
+    if [ "$(docker inspect -f '{{.State.Running}}' ${CONTAINER} 2>/dev/null)" = "true" ]; then
+        return 0  # 运行中
+    else
+        return 1  # 未运行
+    fi
+}
+
+
+# ============================================================================
+# 服务操作函数
+# ============================================================================
+
+start_service() {
+    log_info "启动 ${SERVICE_NAME}..."
+    
+    # 检查前置条件
+    if ! check_rclone; then
+        log_error "启动失败：rclone 检查不通过"
+        return 1
+    fi
+    
+    if ! check_mount_point; then
+        log_error "启动失败：挂载点检查不通过"
+        return 1
+    fi
+    
+    if ! check_cache_dir; then
+        log_error "启动失败：缓存目录检查不通过"
+        return 1
+    fi
+    
+    check_log_dir
+    
+    # 检查服务是否已在运行
+    if get_status; then
+        log_warn "服务已在运行（PID: $(cat ${PID_FILE})）"
+        return 0
+    fi
+    
+    # 检查是否已挂载
+        if is_mounted "${MOUNT_POINT}"; then
+        log_warn "挂载点已挂载，正在卸载..."
+        umount "${MOUNT_POINT}" 2>/dev/null || fusermount -u "${MOUNT_POINT}" 2>/dev/null
+        sleep 2
+    fi
+    
+    # 启动 rclone mount（后台运行）
+    log_info "执行命令：${RCLONE} mount ${MOUNT_ARGS[*]} --daemon"
+    
+    # 使用 nohup 确保后台运行
+    nohup ${RCLONE} mount ${MOUNT_ARGS[@]} --daemon >/dev/null 2>&1 &
+    local pid=$!
+    
+    # 等待 rclone 进程启动
+    sleep 3
+    # 等待 rclone 进程启动
+    sleep 3
+
+    # 检查进程是否存在或挂载点已生效
+    if ps -p "${pid}" >/dev/null 2>&1 || is_mounted "${MOUNT_POINT}"; then
+        echo "${pid}" > "${PID_FILE}"
+        log_info "服务启动成功（PID: ${pid}）"
+        return 0
+    else
+        log_error "服务启动失败"
+        return 1
+    fi
+}
+
+# systemd 前台启动：让 systemd 管理前台进程（不使用 --daemon / nohup）
+start_service_systemd() {
+    log_info "systemd 启动模式：以前台方式启动 ${SERVICE_NAME}（systemd 将管理进程）..."
+
+    if ! check_rclone; then
+        log_error "启动失败：rclone 检查不通过"
+        return 1
+    fi
+
+    if ! check_mount_point; then
+        log_error "启动失败：挂载点检查不通过"
+        return 1
+    fi
+
+    if ! check_cache_dir; then
+        log_error "启动失败：缓存目录检查不通过"
+        return 1
+    fi
+
+    check_log_dir
+
+    # 如果已挂载，先尝试卸载
+    if is_mounted "${MOUNT_POINT}"; then
+        log_warn "挂载点已挂载，正在卸载..."
+        umount "${MOUNT_POINT}" 2>/dev/null || fusermount -u "${MOUNT_POINT}" 2>/dev/null
+        sleep 2
+    fi
+
+    # 清空缓存
+    log_warn "正在清空缓存目录(${CACHE_DIR})..."
+    find "$CACHE_DIR" -mindepth 1 -delete
+    log_warn "正在清空挂载目录..."
+    rm -rf /volume2/Alist/*
+    log_warn "正在清理日志文件..."
+    rm /var/log/rclone-alist.log
+
+    # 以 exec 方式替换当前进程（systemd 会追踪此进程）
+    log_info "执行前台 rclone：${RCLONE} mount ${MOUNT_ARGS[*]}"
+    exec ${RCLONE} mount ${MOUNT_ARGS[@]}
+}
+
+stop_service() {
+    log_info "停止 ${SERVICE_NAME}..."
+    # 无论 PID 文件是否存在，先尝试卸载挂载点
+    if is_mounted "${MOUNT_POINT}"; then
+        log_info "卸载挂载点：${MOUNT_POINT}"
+        umount "${MOUNT_POINT}" 2>/dev/null
+        local umount_ret=$?
+
+        if [[ ${umount_ret} -ne 0 ]]; then
+            log_warn "umount 失败，尝试 fusermount..."
+            fusermount -u "${MOUNT_POINT}" 2>/dev/null
+        fi
+
+        sleep 2
+    fi
+
+    # 如果存在 PID 文件且进程存在，则尝试优雅终止
+    if [[ -f "${PID_FILE}" ]]; then
+        local pid=$(cat "${PID_FILE}")
+        if ps -p "${pid}" >/dev/null 2>&1; then
+            log_info "杀死进程 PID ${pid}..."
+            kill -TERM "${pid}" 2>/dev/null
+
+            # 等待进程优雅关闭
+            sleep 3
+
+            # 如果仍未关闭，强制杀死
+            if ps -p "${pid}" >/dev/null 2>&1; then
+                log_warn "进程未响应，执行强制杀死..."
+                kill -9 "${pid}" 2>/dev/null
+            fi
+        fi
+
+        # 清理 PID 文件
+        rm -f "${PID_FILE}"
+    else
+        # 没有 PID 文件，尝试按进程名查找并终止（谨慎）
+        if pgrep -f "${RCLONE} mount .*${MOUNT_POINT}" >/dev/null 2>&1; then
+            log_info "未找到 PID 文件，按进程名停止 rclone..."
+            pkill -f "${RCLONE} mount .*${MOUNT_POINT}" || true
+            sleep 2
+        else
+            log_warn "未检测到 rclone 进程或 PID 文件，假定已停止或由 systemd 管理。"
+        fi
+    fi
+
+    log_info "服务已停止"
+
+     # 重启Docker的Jellyfin
+    if is_Docker_running; then
+        log_warn "${CONTAINER} 容器正在运行，执行重启..."
+        docker restart ${CONTAINER}
+    else
+        log_warn "${CONTAINER} 容器未运行！！！"
+        #docker start $CONTAINER
+    fi
+
+    return 0
+}
+
+restart_service() {
+    log_info "重启 ${SERVICE_NAME}..."
+    stop_service
+    sleep 2
+    start_service
+}
+
+status_service() {
+    if get_status; then
+        local pid=$(cat "${PID_FILE}")
+        echo "✓ ${SERVICE_NAME} 正在运行 (PID: ${pid})"
+        
+        # 显示挂载信息
+            if is_mounted "${MOUNT_POINT}"; then
+            echo "  挂载点：${MOUNT_POINT} (已挂载)"
+            local size=$(du -sh "${MOUNT_POINT}" 2>/dev/null | cut -f1)
+            echo "  大小：${size}"
+        else
+            echo "  挂载点：${MOUNT_POINT} (未挂载)"
+        fi
+        
+        # 显示最近的日志
+        echo ""
+        echo "最近日志（最后 5 行）："
+        tail -5 "${LOG_FILE}" 2>/dev/null || echo "  暂无日志"
+        
+        return 0
+    else
+        echo "✗ ${SERVICE_NAME} 未运行"
+        return 1
+    fi
+}
+
+# ============================================================================
+# 主程序
+# ============================================================================
+
+case "${1}" in
+    start)
+#        start_service
+        start_service_systemd
+        ;;
+    systemd-start)
+        start_service_systemd
+        ;;
+    stop)
+        stop_service
+        ;;
+    restart)
+        restart_service
+        ;;
+    status)
+        status_service
+        ;;
+    *)
+        echo "用法: $0 {start|stop|restart|status}"
+        echo ""
+        echo "示例："
+        echo "  $0 start   # 启动服务"
+        echo "  $0 stop    # 停止服务"
+        echo "  $0 restart # 重启服务"
+        echo "  $0 status  # 查看服务状态"
+        exit 1
+        ;;
+esac
+
+exit $?
+
