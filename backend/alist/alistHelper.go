@@ -21,7 +21,8 @@ import (
 )
 
 var (
-	errNotFound = errors.New("未找到")
+	errNotFound   = errors.New("未找到")
+	errFileExists = errors.New("文件已存在")
 )
 
 const autoLoginTokenTTL = 48 * time.Hour
@@ -62,6 +63,13 @@ func isAPINotFound(code int, message string) bool {
 	}
 	msg := strings.ToLower(strings.TrimSpace(message))
 	return code == 500 && (msg == "object not found" || strings.Contains(msg, "object not found"))
+}
+
+// isFileExistsMessage 检测 AList /fs/rename 在目标文件已存在时返回的 403 响应。
+// AList 错误示例：message="file [folder.jpg] exists"
+func isFileExistsMessage(message string) bool {
+	msg := strings.ToLower(strings.TrimSpace(message))
+	return strings.HasSuffix(msg, "exists") || strings.Contains(msg, "] exists")
 }
 
 func (f *Fs) ensureAuth(ctx context.Context) error {
@@ -105,6 +113,9 @@ func (f *Fs) callAPI(ctx context.Context, method, apiPath string, request any, r
 
 	if isAPINotFound(result.Code, result.Message) {
 		return errNotFound
+	}
+	if result.Code == 403 && isFileExistsMessage(result.Message) {
+		return errFileExists
 	}
 	if result.Code >= 400 {
 		return fmt.Errorf("alist API 错误：code=%d，message=%q", result.Code, result.Message)
